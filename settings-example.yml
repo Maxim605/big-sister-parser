@@ -1,0 +1,23 @@
+# пример конфига
+debug: true
+
+basePath: "big-sister-parser"
+host: "TODO"
+
+# БД.
+db:
+  debug: false
+  host: "host"
+  port: 5432
+  username: "admin"
+  password: "admin"
+  database: "big-sister-parser-v1"
+  
+grpc:
+  package: 'arango'
+  protoPath: '../proto/arango.proto'
+  url: 'localhost:50051'
+  credentials: null,
+   
+
+

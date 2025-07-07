@@ -1,0 +1,4 @@
+*.dockerfile text eol=lf
+.dockerignore text eol=lf
+
+* text=auto
