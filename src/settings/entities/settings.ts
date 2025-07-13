@@ -12,8 +12,9 @@ import { Grpc } from "./grpc";
 
 /**
  * Глобальные настройки приложения.
- * TODO Подробное описание - settings.example.yml. 
+ * TODO Подробное описание - settings.example.yml.
  */
+
 export class Settings {
   @IsBoolean()
   public debug = false;

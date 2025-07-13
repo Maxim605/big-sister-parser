@@ -18,7 +18,8 @@
         "test:cov": "jest --coverage",
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
         "test:e2e": "jest --config ./test/jest-e2e.json",
-        "prettier": "prettier --write \"src/**/*.+(js|jsx|ts|tsx|json|css|scss|less|sass)\""
+        "prettier": "prettier --write \"src/**/*.+(js|jsx|ts|tsx|json|css|scss|less|sass)\"",
+        "migrate:arango": "ts-node src/migrations/1751961990-InitMigration.ts"
     },
     "dependencies": {
         "@grpc/grpc-js": "^1.13.4",
@@ -52,7 +53,7 @@
         "pino": "^8.16.0",
         "pino-pretty": "^10.2.3",
         "postgres": "^3.4.2",
-        "reflect-metadata": "^0.1.13",
+        "reflect-metadata": "^0.1.14",
         "rxjs": "^7.8.1",
         "swagger": "^0.7.5",
         "uuid": "^9.0.1",
