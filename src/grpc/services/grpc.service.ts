@@ -1,15 +1,38 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Inject,
+} from "@nestjs/common";
+import { ClientGrpc } from "@nestjs/microservices";
+import { Observable } from "rxjs";
+import { map } from "rxjs/operators";
 
-export interface QueryRequest { aql: string; bindVars?: { [key: string]: any }; }
-export interface Document { fields: { [key: string]: any }; }
-export interface CRUDResponse { success: boolean; key?: string; error?: { code: number; message: string } }
-export interface StreamResponse { document: Document }
-export interface FollowRequest { fromKey: string; toKey: string }
-export interface FriendsRequest { key: string }
-export interface FriendsResponse { friends: Document[] }
+export interface QueryRequest {
+  aql: string;
+  bindVars?: { [key: string]: any };
+}
+export interface Document {
+  fields: { [key: string]: any };
+}
+export interface CRUDResponse {
+  success: boolean;
+  key?: string;
+  error?: { code: number; message: string };
+}
+export interface StreamResponse {
+  document: Document;
+}
+export interface FollowRequest {
+  fromKey: string;
+  toKey: string;
+}
+export interface FriendsRequest {
+  key: string;
+}
+export interface FriendsResponse {
+  friends: Document[];
+}
 
 interface ArangoGrpc {
   StreamQuery(request: QueryRequest): Observable<Document>;
@@ -27,16 +50,16 @@ export class GrpcService implements OnModuleInit, OnModuleDestroy {
   private client: ArangoGrpc;
 
   constructor(
-    @Inject('ARANGO_GRPC_CLIENT')
+    @Inject("ARANGO_GRPC_CLIENT")
     private readonly grpcClient: ClientGrpc,
   ) {}
 
   onModuleInit() {
-    this.client = this.grpcClient.getService<ArangoGrpc>('ArangoService');
+    this.client = this.grpcClient.getService<ArangoGrpc>("ArangoService");
   }
 
   onModuleDestroy() {
-    // TODO 
+    // TODO
   }
 
   createDocument(fields: any): Observable<CRUDResponse> {
@@ -44,9 +67,7 @@ export class GrpcService implements OnModuleInit, OnModuleDestroy {
   }
 
   readDocument(key: string): Observable<Document> {
-    return this.client.ReadDocument({ key }).pipe(
-      map(resp => resp.document),
-    );
+    return this.client.ReadDocument({ key }).pipe(map((resp) => resp.document));
   }
 
   updateDocument(key: string, fields: any): Observable<CRUDResponse> {
@@ -70,8 +91,6 @@ export class GrpcService implements OnModuleInit, OnModuleDestroy {
   }
 
   getFriends(key: string): Observable<Document[]> {
-    return this.client.GetFriends({ key }).pipe(
-      map(r => r.friends),
-    );
+    return this.client.GetFriends({ key }).pipe(map((r) => r.friends));
   }
 }

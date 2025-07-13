@@ -14,10 +14,12 @@ db:
   database: "big-sister-parser-v1"
   
 grpc:
+  url: "http://127.0.0.1:8529"
+  database: "_system"
+  username: "root"
+  password: "test"
   package: 'arango'
   protoPath: '../proto/arango.proto'
-  url: 'localhost:50051'
-  credentials: null,
    
 
 

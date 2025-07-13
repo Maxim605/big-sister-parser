@@ -1,1 +1,1 @@
-export * from './arango.module';
+export * from "./arango.module";
