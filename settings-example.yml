@@ -1,12 +1,11 @@
 # пример конфига
 debug: true
-
 basePath: "big-sister-parser"
 host: "TODO"
 
 # БД.
 db:
-  debug: false
+  debug: true
   host: "host"
   port: 5432
   username: "admin"

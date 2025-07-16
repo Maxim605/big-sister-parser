@@ -9,10 +9,8 @@ import { Settings } from "luxon";
 
 function setupSwagger(app: INestApplication) {
   const options = new DocumentBuilder()
-    .setTitle("Новый личный кабинет")
-    .setDescription(
-      "Документация по API нового личного кабинета студента/сотрудника/препода",
-    )
+    .setTitle("Big Sister Parser")
+    .setDescription("Документация по API")
     .setVersion(V1)
     .addApiKey(
       {
@@ -45,6 +43,7 @@ async function bootstrap() {
 
   app.use((req: any, res: any, next: () => void) => {
     const sessionId = req.sessionID;
+    next();
   });
 
   app.setGlobalPrefix(settings.basePath);

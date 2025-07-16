@@ -16,6 +16,7 @@ import { Grpc } from "./grpc";
  */
 
 export class Settings {
+  @IsDefined()
   @IsBoolean()
   public debug = false;
 
