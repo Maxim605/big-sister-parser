@@ -15,7 +15,7 @@ export class UserEntity {
 
   @IsString()
   bdate: string;
-  
+
   @IsOptional()
   @IsNumber()
   prominence?: number;

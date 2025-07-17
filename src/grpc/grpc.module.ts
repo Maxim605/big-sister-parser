@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { GrpcService } from "./services/grpc.service";
 import { GrpcController } from "./grpc.controller";
 
+const protoPath = join(process.cwd(), "src", "proto", "arango.proto");
+
 @Module({
   imports: [
     ConfigModule,
@@ -16,7 +18,7 @@ import { GrpcController } from "./grpc.controller";
           transport: Transport.GRPC,
           options: {
             package: "arango",
-            protoPath: join(__dirname, "../proto/arango.proto"),
+            protoPath: protoPath,
             url: configService.get<string>(
               "GRPC_ARANGO_URL",
               "localhost:50051",
