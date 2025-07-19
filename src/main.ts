@@ -1,6 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { INestApplication } from "@nestjs/common";
+import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { API_V1, AUTH_KEY, V1 } from "./constants";
 import settings from "./settings";
@@ -47,6 +47,15 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix(settings.basePath);
+
+  // Настройка глобальной валидации
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   setupSwagger(app);
   // Luxon настройка дефолтного часового пояса

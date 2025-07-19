@@ -24,6 +24,7 @@
     "dependencies": {
         "@grpc/grpc-js": "^1.13.4",
         "@grpc/proto-loader": "^0.7.15",
+        "@nestjs/axios": "^4.0.1",
         "@nestjs/common": "^10.0.0",
         "@nestjs/config": "^4.0.2",
         "@nestjs/core": "^10.0.0",
@@ -33,6 +34,7 @@
         "@nestjs/swagger": "^7.1.13",
         "@types/uuid": "^9.0.5",
         "arangojs": "^10.1.1",
+        "axios": "^1.10.0",
         "basic-ftp": "^5.0.5",
         "chalk": "^4.1.2",
         "class-transformer": "^0.5.1",

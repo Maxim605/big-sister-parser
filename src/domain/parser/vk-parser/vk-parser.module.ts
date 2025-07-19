@@ -1,21 +1,12 @@
 import { Module } from "@nestjs/common";
 import { GrpcModule } from "src/grpc/grpc.module";
+import { HttpModule } from "@nestjs/axios";
 import { VkApiService } from "./services/vk-api.service";
 import { VkParserController } from "./vk-parser.controller";
 
 @Module({
-  imports: [GrpcModule],
-  providers: [
-    {
-      provide: "VK_ACCESS_TOKEN",
-      useValue: process.env.VK_ACCESS_TOKEN,
-    },
-    {
-      provide: "VK_API_VERSION",
-      useValue: "5.131",
-    },
-    VkApiService,
-  ],
+  imports: [GrpcModule, HttpModule],
+  providers: [VkApiService],
   controllers: [VkParserController],
   exports: [VkApiService],
 })

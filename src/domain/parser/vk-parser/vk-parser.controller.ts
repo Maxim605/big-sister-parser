@@ -2,7 +2,8 @@ import { Controller, Get, Logger, Query } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { API_V1, PARSER_TAG, VK_PARSER_TAG } from "src/constants";
 import { VkApiService } from "./services/vk-api.service";
-import { FriendsGetParams, FriendsGetResponse } from "./interfaces";
+import { FriendsGetResponse } from "./interfaces";
+import { FriendsGetParamsDto, FriendsGetResponseDto } from "./dto";
 import {
   InternalServiceErrorApiResponse,
   NotFoundErrorApiResponse,
@@ -23,22 +24,15 @@ export class VkParserController {
   })
   @ApiOkResponse({
     description: "Список друзей и их количество",
-    type: () => VkParserController,
+    type: () => FriendsGetResponseDto,
   })
   @InternalServiceErrorApiResponse("Ошибка при запросе сервисов VK")
   @NotFoundErrorApiResponse("Пользователь VK не найден")
   public async getFriends(
-    @Query("token") token: string,
-    @Query("user_id") user_id: number,
-    @Query() params: Omit<FriendsGetParams, "token" | "user_id">,
+    @Query() query: FriendsGetParamsDto,
   ): Promise<FriendsGetResponse> {
-    const mergedParams: FriendsGetParams = { ...params, user_id, token };
-    this.logger.log(
-      `Вызов VK friends.get с параметрами: ${JSON.stringify(mergedParams)}`,
-    );
-
     try {
-      const result = await this.vkApiService.friendsGet(mergedParams);
+      const result = this.vkApiService.friendsGet(query);
       return result;
     } catch (error) {
       this.logger.error("Ошибка при получении списка друзей VK", error);

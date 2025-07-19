@@ -9,6 +9,7 @@ import {
 
 import { Db } from "./db";
 import { Grpc } from "./grpc";
+import { VkApi } from "./vk-api";
 
 /**
  * Глобальные настройки приложения.
@@ -38,6 +39,11 @@ export class Settings {
   @ValidateNested()
   @Type(() => Grpc)
   public grpc!: Grpc;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => VkApi)
+  public vkApi!: VkApi;
 
   @IsOptional()
   public credentials?: any;

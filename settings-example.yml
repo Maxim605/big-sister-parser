@@ -19,6 +19,7 @@ grpc:
   password: "test"
   package: 'arango'
   protoPath: '../proto/arango.proto'
-   
 
-
+vkApi:
+  baseUrl: "https://api.vk.com/method"
+  version: "5.131"
