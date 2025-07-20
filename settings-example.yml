@@ -27,4 +27,3 @@ arango: {
 vkApi:
   baseUrl: "https://api.vk.com/method"
   version: "5.131"
-
