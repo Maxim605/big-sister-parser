@@ -1,25 +1,30 @@
 # пример конфига
 debug: true
 basePath: "big-sister-parser"
-host: "TODO"
+host: "http://localhost:3000/"
 
-# БД.
 db:
   debug: true
   host: "host"
   port: 5432
   username: "admin"
   password: "admin"
-  database: "big-sister-parser-v1"
+  database: "big-sister-parser"
   
 grpc:
-  url: "http://127.0.0.1:8529"
-  database: "_system"
-  username: "root"
-  password: "test"
+  url: "localhost:50051"
   package: 'arango'
-  protoPath: '../proto/arango.proto'
+  protoPath: '../src/proto/arango.proto'
+
+
+arango: {
+  url: 'http://localhost:8529',  
+  database: 'big-sister-parser',
+  username: 'root',
+  password: 'test',
+}
 
 vkApi:
   baseUrl: "https://api.vk.com/method"
   version: "5.131"
+

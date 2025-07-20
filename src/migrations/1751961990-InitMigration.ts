@@ -5,10 +5,10 @@ import settings from "../settings";
 async function run() {
   const db = new Database({
     url: settings.grpc.url || "http://127.0.0.1:8529",
-    databaseName: settings.grpc.database || "mydb",
+    databaseName: settings.arango.database || "mydb",
     auth: {
-      username: settings.grpc.username || "root",
-      password: settings.grpc.password || "test",
+      username: settings.arango.username || "root",
+      password: settings.arango.password || "test",
     },
   });
 

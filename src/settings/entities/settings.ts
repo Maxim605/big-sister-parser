@@ -10,6 +10,7 @@ import {
 import { Db } from "./db";
 import { Grpc } from "./grpc";
 import { VkApi } from "./vk-api";
+import { Arango } from "./arango";
 
 /**
  * Глобальные настройки приложения.
@@ -38,12 +39,17 @@ export class Settings {
   @IsDefined()
   @ValidateNested()
   @Type(() => Grpc)
-  public grpc!: Grpc;
+  public grpc: Grpc;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => Arango)
+  public arango: Arango;
 
   @IsDefined()
   @ValidateNested()
   @Type(() => VkApi)
-  public vkApi!: VkApi;
+  public vkApi: VkApi;
 
   @IsOptional()
   public credentials?: any;
