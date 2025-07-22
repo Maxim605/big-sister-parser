@@ -1,38 +1,35 @@
 import "reflect-metadata";
 import { Database } from "arangojs";
+import { ThriftArangoService } from "../thrift/services/thrift-arango.service";
 import settings from "../settings";
 
 async function run() {
   const db = new Database({
-    url: settings.grpc.url || "http://127.0.0.1:8529",
-    databaseName: settings.grpc.database || "mydb",
+    url: settings.arango.url,
+    databaseName: settings.arango.database,
     auth: {
-      username: settings.grpc.username || "root",
-      password: settings.grpc.password || "test",
+      username: settings.arango.username,
+      password: settings.arango.password,
     },
   });
 
-  const docCols = ["users", "groups"];
-  for (const name of docCols) {
+  for (const name of ["users", "groups"]) {
     const col = db.collection(name);
-    const exists = await col.exists();
-    if (!exists) {
+    if (!(await col.exists())) {
       await db.createCollection(name);
-      console.log(`✅ Document collection "${name}" created`);
+      console.log(`✅ Document collection '${name}' created`);
     } else {
-      console.log(`ℹ️  Document collection "${name}" already exists`);
+      console.log(`ℹ️ Document collection '${name}' already exists`);
     }
   }
 
-  const edgeCols = ["friends", "subscriptions"];
-  for (const name of edgeCols) {
+  for (const name of ["subscriptions", "friendships"]) {
     const col = db.collection(name);
-    const exists = await col.exists();
-    if (!exists) {
+    if (!(await col.exists())) {
       await db.createEdgeCollection(name);
-      console.log(`✅ Edge collection "${name}" created`);
+      console.log(`✅ Edge collection '${name}' created`);
     } else {
-      console.log(`ℹ️  Edge collection "${name}" already exists`);
+      console.log(`ℹ️ Edge collection '${name}' already exists`);
     }
   }
 }

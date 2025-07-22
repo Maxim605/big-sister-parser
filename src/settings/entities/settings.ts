@@ -8,7 +8,8 @@ import {
 } from "class-validator";
 
 import { Db } from "./db";
-import { Grpc } from "./grpc";
+import { VkApi } from "./vk-api";
+import { Arango } from "./arango";
 
 /**
  * Глобальные настройки приложения.
@@ -36,8 +37,13 @@ export class Settings {
 
   @IsDefined()
   @ValidateNested()
-  @Type(() => Grpc)
-  public grpc!: Grpc;
+  @Type(() => Arango)
+  public arango: Arango;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => VkApi)
+  public vkApi: VkApi;
 
   @IsOptional()
   public credentials?: any;
