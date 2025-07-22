@@ -1,9 +1,8 @@
 import { Module } from "@nestjs/common";
-import { GrpcModule } from "src/grpc/grpc.module";
 import { LocalCacheService } from "./services/cache.service";
 
 @Module({
-  imports: [GrpcModule],
+  imports: [],
   providers: [LocalCacheService],
   controllers: [],
   exports: [LocalCacheService],
