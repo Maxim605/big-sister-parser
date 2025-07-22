@@ -1,5 +1,3 @@
-# Личный кабинет студента и сотрудника
-
 Бэкенд парсера big-siser 
 
 **Технологии:** NestJS + gRPC
@@ -35,30 +33,6 @@ npm run build && npm run start:prod
 
 ---
 
-## CLI-команды
-
-CLI-команды позволяют выполнять действия приложения через консоль с необходимыми зависимостями.
-
-### Запуск команды
-
-- Через ts-node:
-
-```bash
-npx ts-node -r tsconfig-paths/register src/cli.ts <НАЗВАНИЕ_КОМАНДЫ> [<ПАРАМЕТРЫ>] [АРГУМЕНТЫ]
-```
-
-- Через npm-скрипт (рекомендуется):
-
-```bash
-npm run cli <НАЗВАНИЕ_КОМАНДЫ> -- [<ПАРАМЕТРЫ>] [АРГУМЕНТЫ]
-```
-
-- Для справки по команде:
-
-```bash
-npm run cli <НАЗВАНИЕ_КОМАНДЫ> --help
-```
-
 
 ## Запуск с помощью docker-compose
 
@@ -74,25 +48,28 @@ docker-compose up -d (TODO)
 
 ```yml
 debug: true
-
 basePath: "big-sister-parser"
-host: "TODO"
+host: "http://localhost:3000/"
 
 db:
-  debug: false
+  debug: true
   host: "host"
   port: 5432
   username: "admin"
   password: "admin"
-  database: "big-sister-parser-v1"
-  
-grpc:
-  url: "http://127.0.0.1:8529"
-  database: "_system"
-  username: "root"
-  password: "test"
-  package: 'arango'
-  protoPath: '../proto/arango.proto'
+  database: "big-sister-parser"
+
+arango: {
+  url: 'http://localhost:8529',  
+  database: 'big-sister-parser',
+  username: 'root',
+  password: 'test',
+}
+
+vkApi:
+  baseUrl: "https://api.vk.com/method"
+  version: "5.131"
+
 ```
 
 ---
