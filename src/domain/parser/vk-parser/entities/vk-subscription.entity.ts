@@ -1,6 +1,6 @@
 import { IsInt, IsOptional, IsNumber } from "class-validator";
 
-export class Subscription {
+export class VkSubscriptionEntity {
   @IsInt()
   _from: number;
 

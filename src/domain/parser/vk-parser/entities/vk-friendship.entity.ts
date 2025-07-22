@@ -1,6 +1,6 @@
 import { IsInt, IsOptional, IsNumber } from "class-validator";
 
-export class FriendshipEdge {
+export class VkFriendshipEntity {
   @IsInt()
   _from: number;
 

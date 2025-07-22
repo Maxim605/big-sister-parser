@@ -1,6 +1,6 @@
 import { IsString, IsInt, IsOptional, IsNumber } from "class-validator";
 
-export class VkUser {
+export class VkFriendEntity {
   @IsInt()
   id: number;
 
@@ -50,4 +50,7 @@ export class VkUser {
   @IsOptional()
   @IsNumber()
   prominence?: number;
+
+  @IsInt()
+  owner_user_id: number;
 }

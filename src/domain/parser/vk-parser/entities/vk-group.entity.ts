@@ -1,6 +1,12 @@
-import { IsString, IsInt, IsOptional, IsBoolean, IsNumber } from "class-validator";
+import {
+  IsString,
+  IsInt,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+} from "class-validator";
 
-export class VkGroup {
+export class VkGroupEntity {
   @IsInt()
   id: number;
 
