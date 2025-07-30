@@ -7,7 +7,7 @@ export class AppService {
   getHello(): any {
     return {
       app: "Parser backend API, 2025",
-      version: "latest",
+      version: "1.0",
     };
   }
 }
