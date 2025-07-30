@@ -1,30 +1,33 @@
 import { DynamicModule, Module, Provider } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { Database, aql } from "arangojs";
-import { ConfigModule } from "@nestjs/config";
+import { Database } from "arangojs";
+import settings from "../settings";
 
 @Module({})
 export class ArangoModule {
   static forRoot(): DynamicModule {
     const arangoProvider: Provider = {
       provide: "ARANGODB_CLIENT",
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: async () => {
         const db = new Database({
-          url: config.get("ARANGO_URL"),
-          databaseName: config.get("ARANGO_DB_NAME"),
+          url: settings.arango.url,
+          databaseName: settings.arango.database,
           auth: {
-            username: config.get("ARANGO_USER"),
-            password: config.get("ARANGO_PASSWORD"),
+            username: settings.arango.username,
+            password: settings.arango.password,
           },
         });
+        try {
+          await db.listCollections();
+        } catch (e) {
+          throw new Error(`[ArangoModule] Ошибка подключения к ArangoDB: ${e}`);
+        }
         return db;
       },
     };
 
     return {
       module: ArangoModule,
-      imports: [ConfigModule],
+      imports: [],
       providers: [arangoProvider],
       exports: [arangoProvider],
     };

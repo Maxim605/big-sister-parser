@@ -1,18 +1,21 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { INestApplication } from "@nestjs/common";
+import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { API_V1, AUTH_KEY, V1 } from "./constants";
 import settings from "./settings";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { Settings } from "luxon";
+import { MicroserviceOptions, Transport } from "@nestjs/microservices";
+import { join } from "path";
+
+const util = require("util"); // запрет циклических ссылок глубже 5
+console.log(util.inspect(this, { showHidden: false, depth: 5, colors: true }));
 
 function setupSwagger(app: INestApplication) {
   const options = new DocumentBuilder()
-    .setTitle("Новый личный кабинет")
-    .setDescription(
-      "Документация по API нового личного кабинета студента/сотрудника/препода",
-    )
+    .setTitle("Big Sister Parser")
+    .setDescription("Документация по API")
     .setVersion(V1)
     .addApiKey(
       {
@@ -43,11 +46,22 @@ async function bootstrap() {
   // TODO
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  await app.startAllMicroservices();
   app.use((req: any, res: any, next: () => void) => {
     const sessionId = req.sessionID;
+    next();
   });
 
   app.setGlobalPrefix(settings.basePath);
+
+  // Настройка глобальной валидации
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   setupSwagger(app);
   // Luxon настройка дефолтного часового пояса
