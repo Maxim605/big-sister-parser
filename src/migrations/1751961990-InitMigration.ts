@@ -1,6 +1,5 @@
 import "reflect-metadata";
 import { Database } from "arangojs";
-import { ThriftArangoService } from "../thrift/services/thrift-arango.service";
 import settings from "../settings";
 
 async function run() {

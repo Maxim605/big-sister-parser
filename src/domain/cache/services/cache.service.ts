@@ -1,5 +1,4 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { LocalCache } from "../entites/app-cache.entity";
 import { DateTime } from "luxon";
 
 export class CachedData<T> {

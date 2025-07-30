@@ -3,7 +3,6 @@ import { CQRSService } from "src/common/interfaces";
 import { ThriftArangoService } from "../../../../../../thrift/services/thrift-arango.service";
 import { VkFriend } from "../../../interfaces";
 import { VkFriendEntity } from "../../../entities";
-import { lastValueFrom } from "rxjs";
 
 @Injectable()
 export class SaveVkFriendsService implements CQRSService {

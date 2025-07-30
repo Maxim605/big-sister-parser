@@ -4,7 +4,6 @@ import { ThriftArangoService } from "../../../../../../thrift/services/thrift-ar
 import { VkFriendEntity } from "../../../entities";
 import { VkFriendsGetResponseDto } from "../../../dto/vk-friends-get-response.dto";
 import { VkFriendMapperService } from "../../vk-friend-mapper.service";
-import { lastValueFrom } from "rxjs";
 
 @Injectable()
 export class GetVkFriendsService implements CQRSService {

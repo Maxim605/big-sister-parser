@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { ThriftArangoService } from "../../../../../../thrift/services/thrift-arango.service";
-import { firstValueFrom, take } from "rxjs";
 
 @Injectable()
 export class TestSaveService {
