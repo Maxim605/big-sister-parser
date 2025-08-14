@@ -5,6 +5,7 @@ import {
   VkUsersGetSubscriptionsParams,
   VkUsersGetSubscriptionsResponse,
 } from "../../../../interfaces";
+import { VK_FETCH_DELAY } from "src/constants";
 
 @Injectable()
 export class FetchVkUserSubscriptionsService implements CQRSService {
@@ -12,6 +13,8 @@ export class FetchVkUserSubscriptionsService implements CQRSService {
   public async execute(
     params: VkUsersGetSubscriptionsParams,
   ): Promise<VkUsersGetSubscriptionsResponse> {
-    return await this.vkApiService.usersGetSubscriptions(params);
+    const res = await this.vkApiService.usersGetSubscriptions(params);
+    await new Promise((r) => setTimeout(r, VK_FETCH_DELAY));
+    return res;
   }
 }

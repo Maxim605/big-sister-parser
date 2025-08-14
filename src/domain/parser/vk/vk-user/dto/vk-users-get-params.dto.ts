@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
   IsNumber,
   IsOptional,
@@ -71,9 +71,8 @@ export class VkUsersGetSubscriptionsParamsDto {
   @Transform(({ value }) => value === "true" || value === true)
   extended?: boolean;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: "Смещение",
-    required: false,
     example: 0,
     type: Number,
   })
@@ -82,9 +81,8 @@ export class VkUsersGetSubscriptionsParamsDto {
   @Type(() => Number)
   offset?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: "Количество",
-    required: false,
     example: 50,
     type: Number,
   })

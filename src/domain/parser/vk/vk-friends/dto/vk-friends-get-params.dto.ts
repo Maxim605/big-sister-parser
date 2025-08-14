@@ -1,4 +1,4 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNumber, IsOptional, IsString, IsArray, IsIn } from "class-validator";
 import { Transform, Type } from "class-transformer";
 
@@ -22,9 +22,8 @@ export class VkFriendsGetParamsDto {
   @IsIn(["name", "hints"])
   order?: "name" | "hints";
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: "Количество друзей для возврата",
-    required: false,
     example: 5,
     type: Number,
   })
@@ -33,9 +32,8 @@ export class VkFriendsGetParamsDto {
   @Type(() => Number)
   count?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: "Смещение от начала списка",
-    required: false,
     example: 0,
     type: Number,
   })

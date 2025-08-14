@@ -1,5 +1,5 @@
 import { Controller, Get, Logger, Query, Post } from "@nestjs/common";
-import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { API_V1, VK_TAG } from "src/constants";
 import { VkFriendsService } from "./services/vk-friends.service";
 import { VkFriendsGetParamsDto, VkFriendsGetResponseDto } from "./dto";
@@ -35,12 +35,17 @@ export class VkFriendsController {
   @Get("friends/get")
   @ApiOperation({ summary: "Получить друзей из базы (как VK friends.get)" })
   @ApiOkResponse({ type: () => VkFriendsGetResponseDto })
+  @ApiQuery({ name: "user_id", type: Number, required: true })
+  @ApiQuery({ name: "count", type: Number, required: false })
+  @ApiQuery({ name: "offset", type: Number, required: false })
   async getFromDb(
     @Query("user_id") user_id: number,
     @Query("count") count?: number,
     @Query("offset") offset?: number,
   ) {
-    const res = await this.getVkFriends.execute(Number(user_id), Number(count) || 20, Number(offset) || 0);
+    const countNum = count !== undefined && count !== null ? Number(count) : undefined;
+    const offsetNum = Number(offset) || 0;
+    const res = await this.getVkFriends.execute(Number(user_id), countNum, offsetNum);
     return res;
   }
 

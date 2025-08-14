@@ -4,6 +4,8 @@ export const API_V1 = `api/${V1}`;
 export const SERVICE_V1 = `service/${V1}`;
 export const AUTH_KEY = "auth-key";
 
+export const VK_FETCH_DELAY = 15;
+
 export const ADMIN_TAG = "admin-3dd18037";
 
 export const PARSER_TAG = "parser";

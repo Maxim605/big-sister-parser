@@ -1,5 +1,5 @@
 import { Controller, Get, Logger, Query, Post } from "@nestjs/common";
-import { ApiOkResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
 import { API_V1, VK_TAG } from "src/constants";
 import { VkUsersGetParamsDto, VkUsersGetSubscriptionsParamsDto } from "./dto";
 import { LoadVkUserService } from "./services/cqrs/commands/load-vk-user.service";
@@ -53,12 +53,17 @@ export class VkUserController {
   @Get("user/get/subscriptions")
   @ApiOperation({ summary: "Получить подписки пользователя из базы" })
   @ApiOkResponse({ description: "Список group ids" })
+  @ApiQuery({ name: "user_id", type: Number, required: true })
+  @ApiQuery({ name: "count", type: Number, required: false })
+  @ApiQuery({ name: "offset", type: Number, required: false })
   async getSubscriptions(
     @Query("user_id") user_id: number,
     @Query("count") count?: number,
     @Query("offset") offset?: number,
   ) {
-    const res = await this.getVkSubscriptions.execute(Number(user_id), Number(count) || 20, Number(offset) || 0);
+    const countNum = count !== undefined && count !== null ? Number(count) : undefined;
+    const offsetNum = Number(offset) || 0;
+    const res = await this.getVkSubscriptions.execute(Number(user_id), countNum, offsetNum);
     return res;
   }
 

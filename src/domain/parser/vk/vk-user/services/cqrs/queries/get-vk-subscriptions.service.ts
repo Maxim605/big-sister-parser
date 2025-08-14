@@ -13,21 +13,31 @@ export class GetVkSubscriptionsService implements CQRSService {
 
   public async execute(
     user_id: number,
-    limit = 20,
-    offset = 0,
+    count?: number,
+    offset?: number,
   ): Promise<GetSubscriptionsDto> {
     const startVertex = `users/${user_id}`;
     const countCursor = await this.db.query(aql`
       RETURN LENGTH(FOR v IN 1..1 OUTBOUND ${startVertex} subscriptions RETURN 1)
     `);
-    const [count] = await countCursor.all();
+    const [total] = await countCursor.all();
 
-    const cursor = await this.db.query(aql`
+    if (typeof count === "number") {
+      const safeOffset = typeof offset === "number" ? offset : 0;
+      const cursor = await this.db.query(aql`
+        FOR v IN 1..1 OUTBOUND ${startVertex} subscriptions
+          LIMIT ${safeOffset}, ${count}
+          RETURN v._key
+      `);
+      const items = await cursor.all();
+      return { count: total || 0, items };
+    }
+
+    const cursorAll = await this.db.query(aql`
       FOR v IN 1..1 OUTBOUND ${startVertex} subscriptions
-        LIMIT ${offset}, ${limit}
         RETURN v._key
     `);
-    const items = await cursor.all();
-    return { count: count || 0, items };
+    const itemsAll = await cursorAll.all();
+    return { count: total || 0, items: itemsAll };
   }
 }
