@@ -19,9 +19,19 @@ const arangoService = require("./gen-nodejs/ArangoService"); // TODO: fix path
         const handler = {
           async save(req) {
             try {
-              const col = db.collection(req.collection);
+              const collectionName = req.collection;
               const doc = req.fields;
-              const res = await col.save(doc);
+              let col = db.collection(collectionName);
+              const exists = await col.exists();
+              if (!exists) {
+                if (doc._from && doc._to) {
+                  await db.createEdgeCollection(collectionName);
+                } else {
+                  await db.createCollection(collectionName);
+                }
+                col = db.collection(collectionName);
+              }
+              const res = await col.save(doc, { overwriteMode: "update" });
               return { success: true, key: res._key };
             } catch (e) {
               return { success: false, error: e.message };

@@ -9,3 +9,4 @@ export const ADMIN_TAG = "admin-3dd18037";
 export const PARSER_TAG = "parser";
 export const ARANGO_TAG = "arango";
 export const VK_PARSER_TAG = "vk-parser";
+export const VK_TAG = "vk";
