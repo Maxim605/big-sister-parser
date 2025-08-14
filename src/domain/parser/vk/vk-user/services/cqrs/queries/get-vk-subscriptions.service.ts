@@ -1,25 +1,29 @@
 import { Injectable, Inject } from "@nestjs/common";
 import { CQRSService } from "src/common/interfaces";
 import { Database, aql } from "arangojs";
-import { VkFriendsGetResponseDto } from "../../../dto/vk-friends-get-response.dto";
+
+export interface GetSubscriptionsDto {
+  count: number;
+  items: Array<number>;
+}
 
 @Injectable()
-export class GetVkFriendsService implements CQRSService {
+export class GetVkSubscriptionsService implements CQRSService {
   constructor(@Inject("ARANGODB_CLIENT") private readonly db: Database) {}
 
   public async execute(
     user_id: number,
     limit = 20,
     offset = 0,
-  ): Promise<VkFriendsGetResponseDto> {
+  ): Promise<GetSubscriptionsDto> {
     const startVertex = `users/${user_id}`;
     const countCursor = await this.db.query(aql`
-      RETURN LENGTH(FOR v IN 1..1 OUTBOUND ${startVertex} friendships RETURN 1)
+      RETURN LENGTH(FOR v IN 1..1 OUTBOUND ${startVertex} subscriptions RETURN 1)
     `);
     const [count] = await countCursor.all();
 
     const cursor = await this.db.query(aql`
-      FOR v IN 1..1 OUTBOUND ${startVertex} friendships
+      FOR v IN 1..1 OUTBOUND ${startVertex} subscriptions
         LIMIT ${offset}, ${limit}
         RETURN v._key
     `);

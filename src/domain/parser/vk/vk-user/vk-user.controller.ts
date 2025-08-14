@@ -7,6 +7,7 @@ import { LoadVkUserSubscriptionsService } from "./services/cqrs/commands/load-vk
 import { GetVkUserService } from "./services/cqrs/queries/get-vk-user.service";
 import { FetchVkUserService } from "./services/cqrs/queries/fetch-vk-user.service";
 import { FetchVkUserSubscriptionsService } from "./services/cqrs/queries/fetch-vk-user-subscriptions.service";
+import { GetVkSubscriptionsService } from "./services/cqrs/queries/get-vk-subscriptions.service";
 
 @ApiTags(VK_TAG)
 @Controller(`${API_V1}/${VK_TAG}`)
@@ -18,6 +19,7 @@ export class VkUserController {
     private readonly getVkUser: GetVkUserService,
     private readonly fetchVkUser: FetchVkUserService,
     private readonly fetchVkUserSubscriptions: FetchVkUserSubscriptionsService,
+    private readonly getVkSubscriptions: GetVkSubscriptionsService,
   ) {}
 
   @Get("user/fetch")
@@ -45,6 +47,18 @@ export class VkUserController {
       count: params.count,
       fields: params.fields,
     } as any);
+    return res;
+  }
+
+  @Get("user/get/subscriptions")
+  @ApiOperation({ summary: "Получить подписки пользователя из базы" })
+  @ApiOkResponse({ description: "Список group ids" })
+  async getSubscriptions(
+    @Query("user_id") user_id: number,
+    @Query("count") count?: number,
+    @Query("offset") offset?: number,
+  ) {
+    const res = await this.getVkSubscriptions.execute(Number(user_id), Number(count) || 20, Number(offset) || 0);
     return res;
   }
 

@@ -4,6 +4,7 @@ import { API_V1, VK_TAG } from "src/constants";
 import { VkFriendsService } from "./services/vk-friends.service";
 import { VkFriendsGetParamsDto, VkFriendsGetResponseDto } from "./dto";
 import { FetchVkFriendsService } from "./services/cqrs/queries/fetch-vk-friends.service";
+import { GetVkFriendsService } from "./services/cqrs/queries/get-vk-friends.service";
 
 @ApiTags(VK_TAG)
 @Controller(`${API_V1}/${VK_TAG}`)
@@ -12,6 +13,7 @@ export class VkFriendsController {
   constructor(
     private readonly vkFriendsService: VkFriendsService,
     private readonly fetchVkFriends: FetchVkFriendsService,
+    private readonly getVkFriends: GetVkFriendsService,
   ) {}
 
   @Get("friends/fetch")
@@ -28,6 +30,18 @@ export class VkFriendsController {
       name_case: query.name_case,
     });
     return { count: res.count, items: res.items } as VkFriendsGetResponseDto;
+  }
+
+  @Get("friends/get")
+  @ApiOperation({ summary: "Получить друзей из базы (как VK friends.get)" })
+  @ApiOkResponse({ type: () => VkFriendsGetResponseDto })
+  async getFromDb(
+    @Query("user_id") user_id: number,
+    @Query("count") count?: number,
+    @Query("offset") offset?: number,
+  ) {
+    const res = await this.getVkFriends.execute(Number(user_id), Number(count) || 20, Number(offset) || 0);
+    return res;
   }
 
   @Post("friends/load")

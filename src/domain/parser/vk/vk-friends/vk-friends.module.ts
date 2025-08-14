@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
+import { ArangoModule } from "src/arango/arango.module";
 import { VkApiService } from "../services/vk-api.service";
 import { VkFriendsController } from "./vk-friends.controller";
 import { LoadVkFriendsService } from "./services/cqrs/commands/load-vk-friends.service";
@@ -10,7 +11,7 @@ import { VkFriendsService } from "./services/vk-friends.service";
 import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, ArangoModule.forRoot()],
   providers: [
     VkApiService,
     LoadVkFriendsService,

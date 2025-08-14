@@ -8,9 +8,11 @@ import { GetVkUserService } from "./services/cqrs/queries/get-vk-user.service";
 import { FetchVkUserService } from "./services/cqrs/queries/fetch-vk-user.service";
 import { FetchVkUserSubscriptionsService } from "./services/cqrs/queries/fetch-vk-user-subscriptions.service";
 import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
+import { GetVkSubscriptionsService } from "./services/cqrs/queries/get-vk-subscriptions.service";
+import { ArangoModule } from "src/arango/arango.module";
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, ArangoModule.forRoot()],
   providers: [
     VkApiService,
     LoadVkUserService,
@@ -18,6 +20,7 @@ import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
     GetVkUserService,
     FetchVkUserService,
     FetchVkUserSubscriptionsService,
+    GetVkSubscriptionsService,
     ThriftArangoService,
   ],
   controllers: [VkUserController],
