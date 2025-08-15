@@ -1,0 +1,51 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { aql, Database } from 'arangojs';
+import { TOKENS } from '../../../common/tokens';
+import { IGroupRepository } from '../../../domain/repositories/igroup.repository';
+import { VkGroup } from '../../../domain/entities/vk-group';
+
+@Injectable()
+export class ArangoGroupRepository implements IGroupRepository {
+  private readonly groups = 'groups';
+  constructor(@Inject(TOKENS.ArangoDbClient) private readonly db: Database) {}
+
+  async findById(id: number): Promise<VkGroup | null> {
+    const cursor = await this.db.query(aql`
+      FOR d IN ${this.db.collection(this.groups)}
+        FILTER d.id == ${id}
+        LIMIT 1
+        RETURN d
+    `);
+    const doc: any = await cursor.next();
+    if (!doc) return null;
+    return new VkGroup(doc.id, doc.name, doc.screenName ?? doc.screen_name);
+  }
+
+  async findManyByIds(ids: number[]): Promise<VkGroup[]> {
+    if (!ids.length) return [];
+    const cursor = await this.db.query(aql`
+      FOR d IN ${this.db.collection(this.groups)}
+        FILTER d.id IN ${ids}
+        RETURN d
+    `);
+    const docs: any[] = await cursor.all();
+    return docs.map((d) => new VkGroup(d.id, d.name, d.screenName ?? d.screen_name));
+  }
+
+  async save(group: VkGroup): Promise<void> {
+    await this.db.query(aql`
+      UPSERT { id: ${group.id} }
+      INSERT { id: ${group.id}, name: ${group.name}, screenName: ${group.screenName} }
+      UPDATE { name: ${group.name}, screenName: ${group.screenName} }
+      IN ${this.db.collection(this.groups)}
+    `);
+  }
+
+  async deleteById(id: number): Promise<void> {
+    await this.db.query(aql`
+      FOR d IN ${this.db.collection(this.groups)}
+        FILTER d.id == ${id}
+        REMOVE d IN ${this.db.collection(this.groups)}
+    `);
+  }
+}

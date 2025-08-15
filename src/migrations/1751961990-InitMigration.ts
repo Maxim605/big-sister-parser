@@ -12,7 +12,7 @@ async function run() {
     },
   });
 
-  for (const name of ["users", "groups"]) {
+  for (const name of ["users", "groups", "posts"]) {
     const col = db.collection(name);
     if (!(await col.exists())) {
       await db.createCollection(name);

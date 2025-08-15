@@ -1,6 +1,6 @@
 import { Controller, Get, Logger, Query, Post } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
-import { API_V1, VK_TAG } from "src/constants";
+import { API_V1, USER_TAG, VK_TAG } from "src/constants";
 import { VkUsersGetParamsDto, VkUsersGetSubscriptionsParamsDto } from "./dto";
 import { LoadVkUserService } from "./services/cqrs/commands/load-vk-user.service";
 import { LoadVkUserSubscriptionsService } from "./services/cqrs/commands/load-vk-user-subscriptions.service";
@@ -9,7 +9,7 @@ import { FetchVkUserService } from "./services/cqrs/queries/fetch-vk-user.servic
 import { FetchVkUserSubscriptionsService } from "./services/cqrs/queries/fetch-vk-user-subscriptions.service";
 import { GetVkSubscriptionsService } from "./services/cqrs/queries/get-vk-subscriptions.service";
 
-@ApiTags(VK_TAG)
+@ApiTags(`${VK_TAG}-${USER_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}`)
 export class VkUserController {
   private readonly logger = new Logger(VkUserController.name);

@@ -46,5 +46,13 @@ export class Settings {
   public vkApi: VkApi;
 
   @IsOptional()
+  @IsBoolean()
+  public enableThrift = false;
+
+  @IsOptional()
   public credentials?: any;
+
+  @IsOptional()
+  @IsString()
+  public apiVersion?: string;
 }

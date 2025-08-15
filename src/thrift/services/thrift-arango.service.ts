@@ -10,14 +10,26 @@ export class ThriftArangoService implements OnModuleInit {
   private connection: any;
 
   onModuleInit() {
-    this.connection = thrift.createConnection("localhost", 9090, {
-      transport: thrift.TBufferedTransport,
-      protocol: thrift.TBinaryProtocol,
-    });
-    this.client = thrift.createClient(ArangoService, this.connection);
+    // Не создаем соединение при инициализации, а только при необходимости
+  }
+
+  private async ensureConnection() {
+    if (!this.connection || !this.client) {
+      try {
+        this.connection = thrift.createConnection("localhost", 9090, {
+          transport: thrift.TBufferedTransport,
+          protocol: thrift.TBinaryProtocol,
+        });
+        this.client = thrift.createClient(ArangoService, this.connection);
+      } catch (error) {
+        console.error('Failed to connect to Thrift server:', error);
+        throw error;
+      }
+    }
   }
 
   async save(collection: string, fields: Record<string, any>) {
+    await this.ensureConnection();
     // Thrift требует map<string, string>, поэтому сериализуем значения
     const stringFields: Record<string, string> = {};
     for (const key in fields) {
@@ -30,6 +42,7 @@ export class ThriftArangoService implements OnModuleInit {
   }
 
   async get(collection: string, key: string) {
+    await this.ensureConnection();
     const req = new ttypes.GetRequest({ collection, key });
     return await this.client.get(req);
   }

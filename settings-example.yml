@@ -1,5 +1,6 @@
 # пример конфига
 debug: true
+enableThrift: false
 basePath: "big-sister-parser"
 host: "http://localhost:3000/"
 

@@ -9,6 +9,8 @@ import { GetVkFriendsService } from "./services/cqrs/queries/get-vk-friends.serv
 import { FetchVkFriendsService } from "./services/cqrs/queries/fetch-vk-friends.service";
 import { VkFriendsService } from "./services/vk-friends.service";
 import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
+import { ThriftArangoStubService } from "src/thrift/services/thrift-arango-stub.service";
+import settings from "src/settings";
 
 @Module({
   imports: [HttpModule, ArangoModule.forRoot()],

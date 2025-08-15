@@ -8,20 +8,29 @@ export class ArangoModule {
     const arangoProvider: Provider = {
       provide: "ARANGODB_CLIENT",
       useFactory: async () => {
-        const db = new Database({
+        // Connect to _system to ensure target DB exists
+        const sys = new Database({
           url: settings.arango.url,
-          databaseName: settings.arango.database,
           auth: {
             username: settings.arango.username,
             password: settings.arango.password,
           },
         });
+        const dbName = settings.arango.database;
         try {
+          const dbs = await sys.listDatabases();
+          if (!dbs.includes(dbName)) {
+            await sys.createDatabase(dbName);
+            // eslint-disable-next-line no-console
+            console.log(`Created ArangoDB database '${dbName}'`);
+          }
+          const db = sys.database(dbName);
+          // Quick connectivity check
           await db.listCollections();
+          return db;
         } catch (e) {
           throw new Error(`[ArangoModule] Ошибка подключения к ArangoDB: ${e}`);
         }
-        return db;
       },
     };
 

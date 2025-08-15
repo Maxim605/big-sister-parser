@@ -1,13 +1,13 @@
 import { Controller, Get, Logger, Query, Post } from "@nestjs/common";
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
-import { API_V1, VK_TAG } from "src/constants";
+import { API_V1, FRIENDS_TAG, VK_TAG } from "src/constants";
 import { VkFriendsService } from "./services/vk-friends.service";
 import { VkFriendsGetParamsDto, VkFriendsGetResponseDto } from "./dto";
 import { FetchVkFriendsService } from "./services/cqrs/queries/fetch-vk-friends.service";
 import { GetVkFriendsService } from "./services/cqrs/queries/get-vk-friends.service";
 
-@ApiTags(VK_TAG)
-@Controller(`${API_V1}/${VK_TAG}`)
+@ApiTags(`${VK_TAG}-${FRIENDS_TAG}`)
+@Controller(`${API_V1}/${VK_TAG}/${FRIENDS_TAG}`)
 export class VkFriendsController {
   private readonly logger = new Logger(VkFriendsController.name);
   constructor(
@@ -16,7 +16,7 @@ export class VkFriendsController {
     private readonly getVkFriends: GetVkFriendsService,
   ) {}
 
-  @Get("friends/fetch")
+  @Get("fetch")
   @ApiOperation({ summary: "Получить друзей из VK API (без сохранения)" })
   @ApiOkResponse({ type: () => VkFriendsGetResponseDto })
   async fetch(@Query() query: VkFriendsGetParamsDto) {
@@ -32,7 +32,7 @@ export class VkFriendsController {
     return { count: res.count, items: res.items } as VkFriendsGetResponseDto;
   }
 
-  @Get("friends/get")
+  @Get("get")
   @ApiOperation({ summary: "Получить друзей из базы (как VK friends.get)" })
   @ApiOkResponse({ type: () => VkFriendsGetResponseDto })
   @ApiQuery({ name: "user_id", type: Number, required: true })
@@ -49,7 +49,7 @@ export class VkFriendsController {
     return res;
   }
 
-  @Post("friends/load")
+  @Post("load")
   @ApiOperation({ summary: "Загрузить друзей из VK и сохранить" })
   async load(@Query() params: VkFriendsGetParamsDto) {
     const res = await this.vkFriendsService.loadFriends(params as any);

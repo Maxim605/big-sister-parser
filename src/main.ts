@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
@@ -33,7 +34,9 @@ function setupSwagger(app: INestApplication) {
    * Swagger-документация доступна только в режиме отладки по маршруту /api/v1.
    */
   if (settings.debug) {
-    SwaggerModule.setup(`${settings.basePath}/${API_V1}`, app, document);
+    // Do not prepend basePath here because Nest's global prefix already applies to routes
+    // Ensure swagger static assets and docs are served under the global prefix
+    SwaggerModule.setup(`${API_V1}`, app, document, { useGlobalPrefix: true });
   }
 }
 
