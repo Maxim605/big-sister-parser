@@ -1,4 +1,4 @@
-import { VkGroup } from '../entities/vk-group';
+import { VkGroup } from "../entities/vk-group";
 
 export interface IGroupRepository {
   findById(id: number): Promise<VkGroup | null>;

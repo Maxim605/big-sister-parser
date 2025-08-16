@@ -7,7 +7,10 @@ export class RateLimiter {
   private tokens: number;
   private lastRefill: number;
 
-  constructor(private readonly opts: RateLimiterOptions, now = Date.now()) {
+  constructor(
+    private readonly opts: RateLimiterOptions,
+    now = Date.now(),
+  ) {
     this.tokens = opts.tokensPerInterval;
     this.lastRefill = now;
   }
@@ -15,8 +18,12 @@ export class RateLimiter {
   private refill(now: number) {
     const elapsed = now - this.lastRefill;
     if (elapsed <= 0) return;
-    const tokensToAdd = (elapsed / this.opts.intervalMs) * this.opts.tokensPerInterval;
-    this.tokens = Math.min(this.opts.tokensPerInterval, this.tokens + tokensToAdd);
+    const tokensToAdd =
+      (elapsed / this.opts.intervalMs) * this.opts.tokensPerInterval;
+    this.tokens = Math.min(
+      this.opts.tokensPerInterval,
+      this.tokens + tokensToAdd,
+    );
     this.lastRefill = now;
   }
 

@@ -17,11 +17,14 @@ const path = require("path");
       useFactory: async (db: Database) => {
         let arangoService: any;
         try {
-          // Works in both src (ts-node) and dist builds
-          arangoService = require(path.join(__dirname, "gen-nodejs", "ArangoService"));
+          arangoService = require(path.join(
+            __dirname,
+            "gen-nodejs",
+            "ArangoService",
+          ));
         } catch (e) {
           throw new Error(
-            "Thrift generated service not found. Run 'npm run gen-thrift' or disable Thrift via settings.enableThrift=false."
+            "Thrift generated service not found. Run 'npm run gen-thrift' or disable Thrift via settings.enableThrift=false.",
           );
         }
         const handler = {

@@ -5,7 +5,7 @@ export class UrlVO {
       new URL(value);
       return new UrlVO(value);
     } catch {
-      throw new Error('Invalid URL');
+      throw new Error("Invalid URL");
     }
   }
 }

@@ -1,4 +1,4 @@
-export type ApiKeyStatus = 'active' | 'invalid' | 'paused';
+export type ApiKeyStatus = "active" | "invalid" | "paused";
 
 export interface ApiKeyRecord {
   id: string;
@@ -13,6 +13,10 @@ export interface ApiKeyRecord {
 export interface IApiKeyRepository {
   ensureTable(): Promise<void>;
   findActiveKeys(network: string): Promise<ApiKeyRecord[]>;
-  updateStatus(id: string, status: ApiKeyStatus, pausedUntil?: number | null): Promise<void>;
+  updateStatus(
+    id: string,
+    status: ApiKeyStatus,
+    pausedUntil?: number | null,
+  ): Promise<void>;
   save(record: ApiKeyRecord): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { VkUser } from '../entities/vk-user';
+import { VkUser } from "../entities/vk-user";
 
 export interface IUserRepository {
   findById(id: number): Promise<VkUser | null>;

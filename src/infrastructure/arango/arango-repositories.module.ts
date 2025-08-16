@@ -1,10 +1,10 @@
-import { Module } from '@nestjs/common';
-import { ArangoUserRepository } from './repositories/arango-user.repository';
-import { ArangoGroupRepository } from './repositories/arango-group.repository';
-import { ArangoPostRepository } from './repositories/arango-post.repository';
-import { ArangoFriendshipRepository } from './repositories/arango-friendship.repository';
-import { TOKENS } from '../../common/tokens';
-import { ArangoModule } from '../../arango/arango.module';
+import { Module } from "@nestjs/common";
+import { ArangoUserRepository } from "./repositories/arango-user.repository";
+import { ArangoGroupRepository } from "./repositories/arango-group.repository";
+import { ArangoPostRepository } from "./repositories/arango-post.repository";
+import { ArangoFriendshipRepository } from "./repositories/arango-friendship.repository";
+import { TOKENS } from "../../common/tokens";
+import { ArangoModule } from "../../arango/arango.module";
 
 @Module({
   imports: [ArangoModule.forRoot()],
@@ -12,8 +12,16 @@ import { ArangoModule } from '../../arango/arango.module';
     { provide: TOKENS.IUserRepository, useClass: ArangoUserRepository },
     { provide: TOKENS.IGroupRepository, useClass: ArangoGroupRepository },
     { provide: TOKENS.IPostRepository, useClass: ArangoPostRepository },
-    { provide: TOKENS.IFriendshipRepository, useClass: ArangoFriendshipRepository },
+    {
+      provide: TOKENS.IFriendshipRepository,
+      useClass: ArangoFriendshipRepository,
+    },
   ],
-  exports: [TOKENS.IUserRepository, TOKENS.IGroupRepository, TOKENS.IPostRepository, TOKENS.IFriendshipRepository],
+  exports: [
+    TOKENS.IUserRepository,
+    TOKENS.IGroupRepository,
+    TOKENS.IPostRepository,
+    TOKENS.IFriendshipRepository,
+  ],
 })
 export class ArangoRepositoriesModule {}
