@@ -19,6 +19,17 @@ export class LoadVkFriendsUseCase {
 
   async execute(
     params: VkFriendsGetParams,
+    opts?: {
+      onBatch?: (stats: {
+        savedUsers: number;
+        savedEdges: number;
+      }) => Promise<void> | void;
+      onError?: (err: Error) => Promise<void> | void;
+      onLog?: (
+        msg: string,
+        level?: "info" | "warn" | "error",
+      ) => Promise<void> | void;
+    },
   ): Promise<{
     processed: number;
     failed: number;
@@ -86,15 +97,26 @@ export class LoadVkFriendsUseCase {
 
       try {
         await this.users.saveMany(usersToUpsert);
+        if (opts?.onBatch)
+          await opts.onBatch({
+            savedUsers: usersToUpsert.length,
+            savedEdges: friendIds.length,
+          });
       } catch (e: any) {
         this.logger.error(
           `Batch upsert failed for ${usersToUpsert.length} users: ${e.message}`,
         );
+        if (opts?.onLog)
+          await opts.onLog(
+            `Batch upsert failed for ${usersToUpsert.length} users: ${e.message}`,
+            "error",
+          );
         for (const u of usersToUpsert) {
           try {
             await this.users.save(u);
           } catch (ee: any) {
             this.logger.error(`Failed to upsert user ${u.id}: ${ee.message}`);
+            if (opts?.onError) await opts.onError(ee);
             failed += 1;
             failedDetails.push({ id: u.id, reason: `save: ${ee.message}` });
           }

@@ -26,9 +26,35 @@ export class VkFriendsJobService implements OnModuleDestroy {
           `Processing job ${job.id} for user ${job.data.params.user_id}`,
         );
         try {
-          await job.updateProgress(0);
-          const res = await this.loadUseCase.execute(job.data.params);
-          await job.updateProgress(100);
+          await job.updateProgress({
+            processed: 0,
+            failed: 0,
+            message: "started",
+          });
+          let processed = 0;
+          let failed = 0;
+          const res = await this.loadUseCase.execute(job.data.params, {
+            onBatch: async (stats) => {
+              processed += stats.savedUsers;
+              await job.updateProgress({
+                processed,
+                failed,
+                message: "batch saved",
+              });
+            },
+            onError: async (err) => {
+              failed += 1;
+              await job.updateProgress({
+                processed,
+                failed,
+                message: `error: ${err.message}`,
+              });
+            },
+            onLog: async (msg, level) => {
+              await job.log(`[${level || "info"}] ${msg}`);
+            },
+          });
+          await job.updateProgress({ processed, failed, message: "completed" });
           return res;
         } catch (e: any) {
           this.logger.error(`Job ${job.id} failed: ${e?.message || e}`);

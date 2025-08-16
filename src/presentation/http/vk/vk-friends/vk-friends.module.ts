@@ -9,6 +9,10 @@ import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-
 import { KeyModule } from "src/infrastructure/key/key.module";
 import { RedisModule } from "src/infrastructure/redis/redis.module";
 import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.service";
+import { VkFriendsQueueEventsService } from "src/infrastructure/queue/vk-friends-queue-events.service";
+import { Queue } from "bullmq";
+import settings from "src/settings";
+import { TOKENS } from "src/common/tokens";
 
 @Module({
   imports: [HttpModule, ArangoRepositoriesModule, KeyModule, RedisModule],
@@ -22,6 +26,14 @@ import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.serv
     GetVkFriendsUseCase,
     FetchVkFriendsUseCase,
     VkFriendsJobService,
+    {
+      provide: Queue,
+      useFactory: (redis) => {
+        return new Queue("vk-friends-load", { connection: redis });
+      },
+      inject: [TOKENS.RedisClient],
+    },
+    VkFriendsQueueEventsService,
   ],
   controllers: [VkFriendsController],
   exports: [
@@ -30,6 +42,7 @@ import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.serv
     GetVkFriendsUseCase,
     FetchVkFriendsUseCase,
     VkFriendsJobService,
+    VkFriendsQueueEventsService,
   ],
 })
 export class VkFriendsModule {}

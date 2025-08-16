@@ -1,4 +1,13 @@
-import { Controller, Get, Logger, Query, Post } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Logger,
+  Query,
+  Post,
+  Sse,
+  MessageEvent,
+  BadRequestException,
+} from "@nestjs/common";
 import {
   ApiOkResponse,
   ApiOperation,
@@ -12,6 +21,10 @@ import { GetVkFriendsUseCase } from "src/application/use-cases/vk-friends/get-vk
 import { VkFriendsResponse } from "src/domain/parser/vk/interfaces";
 import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-vk-friends.usecase";
 import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.service";
+import { Observable } from "rxjs";
+import { map } from "rxjs/operators";
+import { VkFriendsQueueEventsService } from "src/infrastructure/queue/vk-friends-queue-events.service";
+import { FriendsStreamEvent } from "src/application/use-cases/vk-friends/dto/friends-stream.events";
 
 @ApiTags(`${VK_TAG}-${FRIENDS_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}/${FRIENDS_TAG}`)
@@ -22,6 +35,7 @@ export class VkFriendsController {
     private readonly jobs: VkFriendsJobService,
     private readonly fetchVkFriends: FetchVkFriendsUseCase,
     private readonly getVkFriends: GetVkFriendsUseCase,
+    private readonly queueSvc: VkFriendsQueueEventsService,
   ) {}
 
   @Get("fetch")
@@ -89,5 +103,85 @@ export class VkFriendsController {
     const state = await this.jobs.getJobState(jobId);
     if (!state) return { jobId, state: "not_found" };
     return state;
+  }
+
+  @Sse("load/stream")
+  @ApiOperation({
+    summary: "Стрим прогресса загрузки друзей (SSE)",
+    description:
+      "Открывает поток событий (Server-Sent Events) для отслеживания прогресса загрузки друзей пользователя. Формат событий: FriendsStreamEvent.",
+  })
+  @ApiQuery({
+    name: "user_id",
+    type: Number,
+    required: true,
+    description: "ID пользователя VK",
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    description: "VK access_token",
+  })
+  @ApiQuery({ name: "order", type: String, required: false })
+  @ApiQuery({ name: "count", type: Number, required: false })
+  @ApiQuery({ name: "offset", type: Number, required: false })
+  @ApiQuery({ name: "fields", type: [String], required: false })
+  @ApiQuery({ name: "name_case", type: String, required: false })
+  stream(@Query() params: VkFriendsGetParamsDto): Observable<MessageEvent> {
+    const id = Number(params.user_id);
+    const access_token = params.access_token;
+    const order = params.order;
+    const count = params.count;
+    const offset = params.offset;
+    const fields = params.fields;
+    const name_case = params.name_case;
+
+    if (!id || Number.isNaN(id))
+      throw new BadRequestException("user_id is required");
+    if (!access_token)
+      throw new BadRequestException("access_token is required");
+
+    return new Observable<MessageEvent>((subscriber) => {
+      (async () => {
+        const job = await this.queueSvc.addJob(
+          id,
+          {
+            attempts: 3,
+            backoff: { type: "exponential", delay: 2000 },
+          },
+          {
+            access_token,
+            order,
+            count,
+            offset,
+            fields,
+            name_case,
+          },
+        );
+        subscriber.next({
+          data: {
+            type: "started",
+            jobId: job.id,
+            userId: id,
+            access_token: access_token,
+            order: order,
+            count: count,
+            offset: offset,
+            fields: fields,
+            name_case: name_case,
+          } as FriendsStreamEvent,
+        });
+        const sub = this.queueSvc
+          .stream(job.id as string)
+          .pipe(map((evt) => ({ data: evt }) as MessageEvent))
+          .subscribe({
+            next: (ev) => subscriber.next(ev),
+            error: (err) => subscriber.error(err),
+            complete: () => subscriber.complete(),
+          });
+        return () => sub.unsubscribe();
+      })().catch((e) => subscriber.error(e));
+    });
   }
 }

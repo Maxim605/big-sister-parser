@@ -16,7 +16,6 @@ export class VkFriendsGetParamsDto {
     description: "Порядок сортировки друзей",
     enum: ["name", "hints"],
     required: false,
-    example: "name",
   })
   @IsOptional()
   @IsIn(["name", "hints"])
@@ -24,7 +23,6 @@ export class VkFriendsGetParamsDto {
 
   @ApiPropertyOptional({
     description: "Количество друзей для возврата",
-    example: 5,
     type: Number,
   })
   @IsOptional()
@@ -34,7 +32,6 @@ export class VkFriendsGetParamsDto {
 
   @ApiPropertyOptional({
     description: "Смещение от начала списка",
-    example: 0,
     type: Number,
   })
   @IsOptional()
