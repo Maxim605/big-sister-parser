@@ -1,5 +1,7 @@
 # пример конфига
 debug: true
+envSecret: "dev-insecure-secret-key-32bytes!"
+
 enableThrift: false
 basePath: "big-sister-parser"
 host: "http://localhost:3000/"

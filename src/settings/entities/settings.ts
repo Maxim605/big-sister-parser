@@ -23,6 +23,10 @@ export class Settings {
 
   @IsDefined()
   @IsString()
+  public envSecret: string;
+
+  @IsDefined()
+  @IsString()
   public host: string;
 
   // префикс URL, по которому будет доступно приложение.
