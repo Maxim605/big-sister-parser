@@ -8,7 +8,6 @@ export class ArangoModule {
     const arangoProvider: Provider = {
       provide: "ARANGODB_CLIENT",
       useFactory: async () => {
-        // Connect to _system to ensure target DB exists
         const sys = new Database({
           url: settings.arango.url,
           auth: {
@@ -21,11 +20,9 @@ export class ArangoModule {
           const dbs = await sys.listDatabases();
           if (!dbs.includes(dbName)) {
             await sys.createDatabase(dbName);
-            // eslint-disable-next-line no-console
             console.log(`Created ArangoDB database '${dbName}'`);
           }
           const db = sys.database(dbName);
-          // Quick connectivity check
           await db.listCollections();
           return db;
         } catch (e) {

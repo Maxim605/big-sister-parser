@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { TOKENS } from '../../common/tokens';
-import { PostgresModule } from './postgres.module';
-import { PostgresApiKeyRepository } from './repositories/postgres-api-key.repository';
-import { SecurityModule } from '../security/security.module';
-import { ApiKeysInitProvider } from './api-keys-init.provider';
+import { Module } from "@nestjs/common";
+import { TOKENS } from "../../common/tokens";
+import { PostgresModule } from "./postgres.module";
+import { PostgresApiKeyRepository } from "./repositories/postgres-api-key.repository";
+import { SecurityModule } from "../security/security.module";
+import { ApiKeysInitProvider } from "./api-keys-init.provider";
 
 @Module({
   imports: [PostgresModule, SecurityModule],

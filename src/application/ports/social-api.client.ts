@@ -1,4 +1,4 @@
-import { ApiKeyLease } from '../services/key-manager.types';
+import { ApiKeyLease } from "../services/key-manager.types";
 
 export interface ISocialApiClient {
   readonly network: string;
@@ -6,10 +6,14 @@ export interface ISocialApiClient {
     method: string,
     params: Record<string, any>,
     lease: ApiKeyLease,
-  ): Promise<{ data: T; statusCode: number; headers?: Record<string, string | number> }>;
+  ): Promise<{
+    data: T;
+    statusCode: number;
+    headers?: Record<string, string | number>;
+  }>;
   refreshKey?(keyId: string): Promise<void>;
 }
 
 export const NETWORKS = {
-  VK: 'vk',
+  VK: "vk",
 } as const;

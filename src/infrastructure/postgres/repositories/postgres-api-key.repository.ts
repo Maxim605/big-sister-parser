@@ -1,8 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Pool } from 'pg';
-import { TOKENS } from '../../../common/tokens';
-import { ApiKeyRecord, IApiKeyRepository } from '../../../domain/repositories/iapi-key.repository';
-import { CryptoService } from '../../security/crypto.service';
+import { Inject, Injectable } from "@nestjs/common";
+import { Pool } from "pg";
+import { TOKENS } from "../../../common/tokens";
+import {
+  ApiKeyRecord,
+  IApiKeyRepository,
+} from "../../../domain/repositories/iapi-key.repository";
+import { CryptoService } from "../../security/crypto.service";
 
 @Injectable()
 export class PostgresApiKeyRepository implements IApiKeyRepository {
@@ -34,7 +37,11 @@ export class PostgresApiKeyRepository implements IApiKeyRepository {
     return res.rows;
   }
 
-  async updateStatus(id: string, status: 'active' | 'invalid' | 'paused', pausedUntil?: number | null): Promise<void> {
+  async updateStatus(
+    id: string,
+    status: "active" | "invalid" | "paused",
+    pausedUntil?: number | null,
+  ): Promise<void> {
     await this.pg.query(
       `UPDATE api_keys SET status = $2, paused_until = $3, updated_at = NOW() WHERE id = $1`,
       [id, status, pausedUntil ?? null],
@@ -46,7 +53,13 @@ export class PostgresApiKeyRepository implements IApiKeyRepository {
       `INSERT INTO api_keys (id, network, token_encrypted, status, paused_until)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (id) DO UPDATE SET network = EXCLUDED.network, token_encrypted = EXCLUDED.token_encrypted, status = EXCLUDED.status, paused_until = EXCLUDED.paused_until, updated_at = NOW()`,
-      [record.id, record.network, record.tokenEncrypted, record.status, record.pausedUntil ?? null],
+      [
+        record.id,
+        record.network,
+        record.tokenEncrypted,
+        record.status,
+        record.pausedUntil ?? null,
+      ],
     );
   }
 }

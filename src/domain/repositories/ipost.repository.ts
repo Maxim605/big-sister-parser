@@ -1,4 +1,4 @@
-import { VkPost } from '../entities/vk-post';
+import { VkPost } from "../entities/vk-post";
 
 export interface IPostRepository {
   findById(id: string): Promise<VkPost | null>;

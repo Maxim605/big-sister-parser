@@ -1,14 +1,17 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { IKeyManager } from '../../application/services/key-manager.port';
-import { ApiKeyLease, CallResult } from '../../application/services/key-manager.types';
-import { IApiKeyRepository } from '../../domain/repositories/iapi-key.repository';
-import { TOKENS } from '../../common/tokens';
-import { RedisLeasingService } from './redis-leasing.service';
-import { RoundRobinStrategy } from './strategies/round-robin.strategy';
-import { KeyState } from './types';
-import { RateLimiter } from './rate-limiter';
-import { CryptoService } from '../security/crypto.service';
-import { v4 as uuidv4 } from 'uuid';
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { IKeyManager } from "../../application/services/key-manager.port";
+import {
+  ApiKeyLease,
+  CallResult,
+} from "../../application/services/key-manager.types";
+import { IApiKeyRepository } from "../../domain/repositories/iapi-key.repository";
+import { TOKENS } from "../../common/tokens";
+import { RedisLeasingService } from "./redis-leasing.service";
+import { RoundRobinStrategy } from "./strategies/round-robin.strategy";
+import { KeyState } from "./types";
+import { RateLimiter } from "./rate-limiter";
+import { CryptoService } from "../security/crypto.service";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class KeyManager implements IKeyManager {
@@ -17,13 +20,17 @@ export class KeyManager implements IKeyManager {
   private readonly keyIndex: Map<string, KeyState> = new Map();
 
   constructor(
-    @Inject(TOKENS.IApiKeyRepository) private readonly keyRepo: IApiKeyRepository,
+    @Inject(TOKENS.IApiKeyRepository)
+    private readonly keyRepo: IApiKeyRepository,
     private readonly leasing: RedisLeasingService,
     private readonly strategy: RoundRobinStrategy,
     private readonly crypto: CryptoService,
   ) {}
 
-  async leaseKey(network: string, _options?: { priority?: number }): Promise<ApiKeyLease> {
+  async leaseKey(
+    network: string,
+    _options?: { priority?: number },
+  ): Promise<ApiKeyLease> {
     await this.ensureLoaded(network);
     const list = this.keysByNetwork.get(network) || [];
     const now = Date.now();
@@ -32,7 +39,7 @@ export class KeyManager implements IKeyManager {
     for (let i = 0; i < tries; i++) {
       const key = this.strategy.pick(list, { now });
       if (!key) break;
-      if (key.status !== 'active') continue;
+      if (key.status !== "active") continue;
       if (key.pausedUntil && key.pausedUntil > now) continue;
       if (!key.limiter.take(now)) continue;
 
@@ -50,7 +57,7 @@ export class KeyManager implements IKeyManager {
       };
     }
 
-    throw new Error('No available API key to lease');
+    throw new Error("No available API key to lease");
   }
 
   async releaseKey(lease: ApiKeyLease, result?: CallResult): Promise<void> {
@@ -60,54 +67,50 @@ export class KeyManager implements IKeyManager {
 
     if (!result) return;
 
-    // Handle errors and backoff
     const status = result.statusCode;
     if (status === 429) {
-      const retryAfter = Number(result.headers?.['retry-after'] ?? 1);
+      const retryAfter = Number(result.headers?.["retry-after"] ?? 1);
       const pauseMs = Math.max(1, Math.floor(retryAfter * 1000));
       key.pausedUntil = Date.now() + pauseMs;
-      key.status = 'paused';
-      await this.keyRepo.updateStatus(key.id, 'paused', key.pausedUntil);
+      key.status = "paused";
+      await this.keyRepo.updateStatus(key.id, "paused", key.pausedUntil);
       return;
     }
     if (status === 401) {
-      key.status = 'invalid';
-      await this.keyRepo.updateStatus(key.id, 'invalid', null);
+      key.status = "invalid";
+      await this.keyRepo.updateStatus(key.id, "invalid", null);
       return;
     }
     if (status >= 500) {
       key.errorCount += 1;
-      // simple circuit: if >3 in 60s -> pause 30s
       if (key.errorCount >= 3) {
         key.pausedUntil = Date.now() + 30_000;
-        key.status = 'paused';
+        key.status = "paused";
         key.errorCount = 0;
-        await this.keyRepo.updateStatus(key.id, 'paused', key.pausedUntil);
+        await this.keyRepo.updateStatus(key.id, "paused", key.pausedUntil);
       }
       return;
     }
 
-    // Success path: reset paused and errors if needed
-    if (key.status !== 'active') {
-      key.status = 'active';
+    if (key.status !== "active") {
+      key.status = "active";
       key.pausedUntil = null;
-      await this.keyRepo.updateStatus(key.id, 'active', null);
+      await this.keyRepo.updateStatus(key.id, "active", null);
     }
     key.errorCount = 0;
   }
 
   async markInvalid(keyId: string, _reason: string): Promise<void> {
     const key = this.keyIndex.get(keyId);
-    if (key) key.status = 'invalid';
-    await this.keyRepo.updateStatus(keyId, 'invalid', null);
+    if (key) key.status = "invalid";
+    await this.keyRepo.updateStatus(keyId, "invalid", null);
   }
 
   async reloadKeys(network?: string): Promise<void> {
     if (network) {
       await this.loadNetwork(network);
     } else {
-      // If unspecified, load for networks present in DB (we need list). For now: load 'vk' only.
-      await this.loadNetwork('vk');
+      await this.loadNetwork("vk");
     }
   }
 

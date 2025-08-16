@@ -1,5 +1,5 @@
-import { IKeySelectionStrategy } from './selection.strategy';
-import { KeyState, PickContext } from '../types';
+import { IKeySelectionStrategy } from "./selection.strategy";
+import { KeyState, PickContext } from "../types";
 
 export class RoundRobinStrategy implements IKeySelectionStrategy {
   private idx = 0;
@@ -9,9 +9,8 @@ export class RoundRobinStrategy implements IKeySelectionStrategy {
     for (let i = 0; i < keys.length; i++) {
       const k = keys[this.idx % keys.length];
       this.idx = (this.idx + 1) % keys.length;
-      if (k.status === 'active') return k;
+      if (k.status === "active") return k;
     }
-    // if all paused/invalid return the first (will fail upstream)
     return keys[start % keys.length];
   }
 }

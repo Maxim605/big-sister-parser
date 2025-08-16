@@ -1,9 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { TOKENS } from '../../common/tokens';
-import { IKeyManager } from '../services/key-manager.port';
-import { ISocialApiClient } from '../ports/social-api.client';
-import { IUserRepository } from '../../domain/repositories/iuser.repository';
-import { IFriendshipRepository } from '../../domain/repositories/ifriendship.repository';
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { TOKENS } from "../../common/tokens";
+import { IKeyManager } from "../services/key-manager.port";
+import { ISocialApiClient } from "../ports/social-api.client";
+import { IUserRepository } from "../../domain/repositories/iuser.repository";
+import { IFriendshipRepository } from "../../domain/repositories/ifriendship.repository";
 
 interface SyncResult {
   userId: number;
@@ -19,14 +19,15 @@ export class SyncFriendsUseCase {
     @Inject(TOKENS.IKeyManager) private readonly keyManager: IKeyManager,
     @Inject(TOKENS.ISocialApiClient) private readonly api: ISocialApiClient,
     @Inject(TOKENS.IUserRepository) private readonly users: IUserRepository,
-    @Inject(TOKENS.IFriendshipRepository) private readonly friendships: IFriendshipRepository,
+    @Inject(TOKENS.IFriendshipRepository)
+    private readonly friendships: IFriendshipRepository,
   ) {}
 
   async execute(userId: number): Promise<SyncResult> {
     const user = await this.users.findById(userId);
-    if (!user) throw new Error(`User ${userId} not found. Import the user first.`);
+    if (!user)
+      throw new Error(`User ${userId} not found. Import the user first.`);
 
-    // clear existing relations first
     await this.friendships.deleteAllForUser(userId);
 
     const limit = 5000;
@@ -38,21 +39,29 @@ export class SyncFriendsUseCase {
       const lease = await this.keyManager.leaseKey(this.api.network);
       try {
         const { data, statusCode, headers } = await this.api.call<any>(
-          'friends.get',
+          "friends.get",
           { user_id: userId, count: limit, offset },
           lease,
         );
         await this.keyManager.releaseKey(lease, { statusCode, headers });
 
-        const count: number = typeof data?.count === 'number' ? data.count : Array.isArray(data) ? data.length : 0;
-        const items: number[] = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+        const count: number =
+          typeof data?.count === "number"
+            ? data.count
+            : Array.isArray(data)
+            ? data.length
+            : 0;
+        const items: number[] = Array.isArray(data?.items)
+          ? data.items
+          : Array.isArray(data)
+          ? data
+          : [];
 
         if (offset === 0) total = count;
 
         if (!items.length) break;
         fetched += items.length;
 
-        // save edges only to existing friend vertices
         await this.friendships.saveEdges(userId, items);
 
         offset += items.length;
@@ -61,9 +70,17 @@ export class SyncFriendsUseCase {
         const statusCode = err?.statusCode ?? 500;
         const headers = err?.headers;
         try {
-          await this.keyManager.releaseKey(lease, { statusCode, headers, error: err });
+          await this.keyManager.releaseKey(lease, {
+            statusCode,
+            headers,
+            error: err,
+          });
         } catch {}
-        this.logger.warn(`SyncFriends failed for ${userId} at offset=${offset}: ${err?.message || err}`);
+        this.logger.warn(
+          `SyncFriends failed for ${userId} at offset=${offset}: ${
+            err?.message || err
+          }`,
+        );
         throw err;
       }
     }

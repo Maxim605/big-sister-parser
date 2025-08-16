@@ -1,7 +1,7 @@
-import { Global, Module } from '@nestjs/common';
-import { Pool } from 'pg';
-import settings from '../../settings';
-import { TOKENS } from '../../common/tokens';
+import { Global, Module } from "@nestjs/common";
+import { Pool } from "pg";
+import settings from "../../settings";
+import { TOKENS } from "../../common/tokens";
 
 @Global()
 @Module({

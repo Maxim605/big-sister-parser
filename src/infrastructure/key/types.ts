@@ -1,6 +1,6 @@
-import { RateLimiter } from './rate-limiter';
+import { RateLimiter } from "./rate-limiter";
 
-export type KeyStatus = 'active' | 'invalid' | 'paused';
+export type KeyStatus = "active" | "invalid" | "paused";
 
 export interface KeyState {
   id: string;
