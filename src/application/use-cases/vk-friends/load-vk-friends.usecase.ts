@@ -19,9 +19,14 @@ export class LoadVkFriendsUseCase {
 
   async execute(
     params: VkFriendsGetParams,
-  ): Promise<{ savedIds: number[]; failedIds: number[] }> {
-    const savedIds: number[] = [];
-    const failedIds: number[] = [];
+  ): Promise<{
+    processed: number;
+    failed: number;
+    failedDetails: Array<{ id: number; reason: string }>;
+  }> {
+    let processed = 0;
+    let failed = 0;
+    const failedDetails: Array<{ id: number; reason: string }> = [];
 
     const pageSize = params.count ?? 500;
     let offset = params.offset ?? 0;
@@ -29,16 +34,13 @@ export class LoadVkFriendsUseCase {
     try {
       await this.users.save(new VkUser(params.user_id, "", ""));
     } catch (e: any) {
-      this.logger.warn(`Failed to upsert root user ${params.user_id}: ${e.message}`);
-    }
-
-    try {
-      await this.friendships.deleteAllForUser(params.user_id);
-    } catch (e: any) {
-      this.logger.warn(`Failed to clear existing edges for ${params.user_id}: ${e.message}`);
+      this.logger.warn(
+        `Failed to upsert root user ${params.user_id}: ${e.message}`,
+      );
     }
 
     const defaultFields = ["id", "first_name", "last_name", "domain"];
+    const allFriendIds: number[] = [];
 
     while (true) {
       const res = await this.api.friendsGet({
@@ -55,45 +57,65 @@ export class LoadVkFriendsUseCase {
       if (!items.length) break;
 
       const friendIds: number[] = [];
+      const usersToUpsert: VkUser[] = [];
 
-      for (const it of items as any[]) {
+      for (const it of items) {
         try {
           if (typeof it === "number") {
-            await this.users.save(new VkUser(it, "", ""));
+            usersToUpsert.push(new VkUser(it, "", ""));
             friendIds.push(it);
-            savedIds.push(it);
+            processed += 1;
           } else if (it && typeof it === "object") {
             friendIds.push(it.id);
             const user = new VkUser(
               it.id,
               it.first_name ?? "",
               it.last_name ?? "",
-              it.domain ?? undefined,
+              (it as any).domain ?? undefined,
             );
-            await this.users.save(user);
-            savedIds.push(it.id);
+            usersToUpsert.push(user);
+            processed += 1;
           }
         } catch (e: any) {
           const id = typeof it === "number" ? it : it.id;
-          this.logger.error(`Failed to upsert user ${id}: ${e.message}`);
-          failedIds.push(id);
+          this.logger.error(`Failed to prepare user ${id}: ${e.message}`);
+          failed += 1;
+          failedDetails.push({ id, reason: `prepare: ${e.message}` });
         }
       }
 
-      if (friendIds.length) {
-        try {
-          await this.friendships.saveEdges(params.user_id, friendIds);
-        } catch (e: any) {
-          this.logger.error(
-            `Failed to save edges for ${params.user_id}: ${e.message}`,
-          );
+      try {
+        await this.users.saveMany(usersToUpsert);
+      } catch (e: any) {
+        this.logger.error(
+          `Batch upsert failed for ${usersToUpsert.length} users: ${e.message}`,
+        );
+        for (const u of usersToUpsert) {
+          try {
+            await this.users.save(u);
+          } catch (ee: any) {
+            this.logger.error(`Failed to upsert user ${u.id}: ${ee.message}`);
+            failed += 1;
+            failedDetails.push({ id: u.id, reason: `save: ${ee.message}` });
+          }
         }
       }
+
+      allFriendIds.push(...friendIds);
 
       if (items.length < pageSize) break;
       offset += items.length;
     }
 
-    return { savedIds, failedIds };
+    try {
+      const uniqueIds = Array.from(new Set(allFriendIds));
+      await this.friendships.replaceForUser(params.user_id, uniqueIds);
+    } catch (e: any) {
+      this.logger.error(
+        `Failed to replace edges for ${params.user_id}: ${e.message}`,
+      );
+    }
+
+    return { processed, failed, failedDetails };
   }
 }

@@ -6,9 +6,12 @@ import { VkFriendsController } from "./vk-friends.controller";
 import { GetVkFriendsUseCase } from "src/application/use-cases/vk-friends/get-vk-friends.usecase";
 import { FetchVkFriendsUseCase } from "src/application/use-cases/vk-friends/fetch-vk-friends.usecase";
 import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-vk-friends.usecase";
+import { KeyModule } from "src/infrastructure/key/key.module";
+import { RedisModule } from "src/infrastructure/redis/redis.module";
+import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.service";
 
 @Module({
-  imports: [HttpModule, ArangoRepositoriesModule],
+  imports: [HttpModule, ArangoRepositoriesModule, KeyModule, RedisModule],
   providers: [
     VkApiService,
     {
@@ -18,8 +21,15 @@ import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-
     LoadVkFriendsUseCase,
     GetVkFriendsUseCase,
     FetchVkFriendsUseCase,
+    VkFriendsJobService,
   ],
   controllers: [VkFriendsController],
-  exports: [VkApiService, LoadVkFriendsUseCase, GetVkFriendsUseCase, FetchVkFriendsUseCase],
+  exports: [
+    VkApiService,
+    LoadVkFriendsUseCase,
+    GetVkFriendsUseCase,
+    FetchVkFriendsUseCase,
+    VkFriendsJobService,
+  ],
 })
 export class VkFriendsModule {}

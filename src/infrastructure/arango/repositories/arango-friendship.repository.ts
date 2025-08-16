@@ -41,6 +41,54 @@ export class ArangoFriendshipRepository implements IFriendshipRepository {
     `);
   }
 
+  async replaceForUser(userId: number, friendIds: number[]): Promise<void> {
+    const uniqueIds = Array.from(new Set(friendIds ?? []));
+
+    const action = `
+      function (params) {
+        const db = require('@arangodb').db;
+        const u = db._query(
+          'FOR v IN ' + params.users + ' FILTER v._key == @key LIMIT 1 RETURN v',
+          { key: params.userId }
+        ).toArray()[0];
+        if (!u) return;
+
+        const friendNodes = db._query(
+          'FOR fid IN @ids LET f = DOCUMENT(@users, TO_STRING(fid)) FILTER f != null RETURN f._id',
+          { ids: params.friendIds, users: params.users }
+        ).toArray();
+
+        db._query(
+          'FOR e IN ' + params.friendships + ' FILTER e._from == @from REMOVE e IN ' + params.friendships,
+          { from: u._id }
+        );
+
+        if (friendNodes.length) {
+          db._query(
+            'FOR toId IN @toIds INSERT { _from: @from, _to: toId } IN ' + params.friendships,
+            { toIds: friendNodes, from: u._id }
+          );
+        }
+      }
+    `;
+
+    await this.db.executeTransaction(
+      {
+        read: [this.users],
+        write: [this.friendships],
+      },
+      action,
+      {
+        params: {
+          users: this.users,
+          friendships: this.friendships,
+          userId: String(userId),
+          friendIds: uniqueIds,
+        },
+      },
+    );
+  }
+
   async countForUser(userId: number): Promise<number> {
     const cursor = await this.db.query(aql`
       LET u = FIRST(

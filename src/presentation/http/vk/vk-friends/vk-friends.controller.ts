@@ -11,6 +11,7 @@ import { FetchVkFriendsUseCase } from "src/application/use-cases/vk-friends/fetc
 import { GetVkFriendsUseCase } from "src/application/use-cases/vk-friends/get-vk-friends.usecase";
 import { VkFriendsResponse } from "src/domain/parser/vk/interfaces";
 import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-vk-friends.usecase";
+import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.service";
 
 @ApiTags(`${VK_TAG}-${FRIENDS_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}/${FRIENDS_TAG}`)
@@ -18,6 +19,7 @@ export class VkFriendsController {
   private readonly logger = new Logger(VkFriendsController.name);
   constructor(
     private readonly loadVkFriends: LoadVkFriendsUseCase,
+    private readonly jobs: VkFriendsJobService,
     private readonly fetchVkFriends: FetchVkFriendsUseCase,
     private readonly getVkFriends: GetVkFriendsUseCase,
   ) {}
@@ -61,9 +63,31 @@ export class VkFriendsController {
   }
 
   @Post("load")
-  @ApiOperation({ summary: "Загрузить друзей из VK и сохранить" })
+  @ApiOperation({
+    summary: "Синхронно загрузить друзей из VK и сохранить в БД",
+  })
+  @ApiOkResponse({
+    description: "Результат загрузки",
+    schema: { example: { processed: 123, failed: 0 } },
+  })
+  async loadSync(@Query() params: VkFriendsGetParamsDto) {
+    const result = await this.loadVkFriends.execute(params as any);
+    return result;
+  }
+
+  @Post("load/async")
+  @ApiOperation({ summary: "Поставить задачу загрузки друзей из VK в очередь" })
   async load(@Query() params: VkFriendsGetParamsDto) {
-    const res = await this.loadVkFriends.execute(params as any);
-    return { message: "Друзья успешно загружены и сохранены", ...res };
+    const jobId = await this.jobs.addLoadJob(params as any);
+    return { jobId };
+  }
+
+  @Get("load/status")
+  @ApiOperation({ summary: "Статус задачи загрузки друзей" })
+  @ApiQuery({ name: "jobId", type: String, required: true })
+  async status(@Query("jobId") jobId: string) {
+    const state = await this.jobs.getJobState(jobId);
+    if (!state) return { jobId, state: "not_found" };
+    return state;
   }
 }

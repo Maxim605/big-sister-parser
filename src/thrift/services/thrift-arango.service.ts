@@ -22,7 +22,7 @@ export class ThriftArangoService implements OnModuleInit {
         });
         this.client = thrift.createClient(ArangoService, this.connection);
       } catch (error) {
-        console.error('Failed to connect to Thrift server:', error);
+        console.error("Failed to connect to Thrift server:", error);
         throw error;
       }
     }

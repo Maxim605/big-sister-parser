@@ -9,9 +9,10 @@ import { FetchVkUserSubscriptionsUseCase } from "src/application/use-cases/vk-us
 import { GetVkSubscriptionsUseCase } from "src/application/use-cases/vk-user/get-vk-subscriptions.usecase";
 import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
 import { ArangoRepositoriesModule } from "src/infrastructure/arango/arango-repositories.module";
+import { KeyModule } from "src/infrastructure/key/key.module";
 
 @Module({
-  imports: [HttpModule, ArangoRepositoriesModule],
+  imports: [HttpModule, ArangoRepositoriesModule, KeyModule],
   providers: [
     VkApiService,
     {

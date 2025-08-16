@@ -4,5 +4,6 @@ export interface IUserRepository {
   findById(id: number): Promise<VkUser | null>;
   findManyByIds(ids: number[]): Promise<VkUser[]>;
   save(user: VkUser): Promise<void>;
+  saveMany(users: VkUser[]): Promise<void>;
   deleteById(id: number): Promise<void>;
 }

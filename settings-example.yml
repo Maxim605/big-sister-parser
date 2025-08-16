@@ -21,6 +21,10 @@ arango: {
   password: 'test',
 }
 
+redis: {
+  url: "redis://127.0.0.1:6379"
+}
+
 vkApi:
   baseUrl: "https://api.vk.com/method"
   version: "5.131"

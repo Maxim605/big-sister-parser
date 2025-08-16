@@ -33,7 +33,10 @@ export class LoadVkFriendsService implements CQRSService {
       ];
       const friendsData = await this.vkApiService.friendsGet({
         ...params,
-        fields: params.fields && params.fields.length > 0 ? params.fields : defaultFields,
+        fields:
+          params.fields && params.fields.length > 0
+            ? params.fields
+            : defaultFields,
       });
       if (friendsData.items && friendsData.items.length > 0) {
         const friends = friendsData.items.filter(

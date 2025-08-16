@@ -47,6 +47,23 @@ export class ArangoUserRepository implements IUserRepository {
     `);
   }
 
+  async saveMany(users: VkUser[]): Promise<void> {
+    if (!users?.length) return;
+    const payload = users.map((u) => ({
+      id: u.id,
+      first_name: u.first_name,
+      last_name: u.last_name,
+      domain: u.domain ?? null,
+    }));
+    await this.db.query(aql`
+      FOR u IN ${payload}
+        UPSERT { _key: TO_STRING(u.id) }
+          INSERT { _key: TO_STRING(u.id), id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain }
+          UPDATE { id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain }
+          IN ${this.db.collection(this.users)}
+    `);
+  }
+
   async deleteById(id: number): Promise<void> {
     await this.db.query(aql`
       FOR d IN ${this.db.collection(this.users)}
