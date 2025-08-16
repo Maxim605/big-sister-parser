@@ -36,11 +36,11 @@ export class ArangoUserRepository implements IUserRepository {
 
   async save(user: VkUser): Promise<void> {
     await this.db.query(aql`
-      UPSERT { id: ${user.id} }
-      INSERT { id: ${user.id}, first_name: ${user.first_name}, last_name: ${
-        user.last_name
-      }, domain: ${user.domain ?? null} }
-      UPDATE { first_name: ${user.first_name}, last_name: ${
+      UPSERT { _key: ${String(user.id)} }
+      INSERT { _key: ${String(user.id)}, id: ${user.id}, first_name: ${
+        user.first_name
+      }, last_name: ${user.last_name}, domain: ${user.domain ?? null} }
+      UPDATE { id: ${user.id}, first_name: ${user.first_name}, last_name: ${
         user.last_name
       }, domain: ${user.domain ?? null} }
       IN ${this.db.collection(this.users)}

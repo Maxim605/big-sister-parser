@@ -6,18 +6,18 @@ import {
   ApiTags,
 } from "@nestjs/swagger";
 import { API_V1, FRIENDS_TAG, VK_TAG } from "src/constants";
-import { VkFriendsService } from "src/domain/parser/vk/vk-friends/services/vk-friends.service";
 import { VkFriendsGetParamsDto, VkFriendsGetResponseDto } from "./dto";
 import { FetchVkFriendsUseCase } from "src/application/use-cases/vk-friends/fetch-vk-friends.usecase";
 import { GetVkFriendsUseCase } from "src/application/use-cases/vk-friends/get-vk-friends.usecase";
 import { VkFriendsResponse } from "src/domain/parser/vk/interfaces";
+import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-vk-friends.usecase";
 
 @ApiTags(`${VK_TAG}-${FRIENDS_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}/${FRIENDS_TAG}`)
 export class VkFriendsController {
   private readonly logger = new Logger(VkFriendsController.name);
   constructor(
-    private readonly vkFriendsService: VkFriendsService,
+    private readonly loadVkFriends: LoadVkFriendsUseCase,
     private readonly fetchVkFriends: FetchVkFriendsUseCase,
     private readonly getVkFriends: GetVkFriendsUseCase,
   ) {}
@@ -63,7 +63,7 @@ export class VkFriendsController {
   @Post("load")
   @ApiOperation({ summary: "Загрузить друзей из VK и сохранить" })
   async load(@Query() params: VkFriendsGetParamsDto) {
-    const res = await this.vkFriendsService.loadFriends(params as any);
+    const res = await this.loadVkFriends.execute(params as any);
     return { message: "Друзья успешно загружены и сохранены", ...res };
   }
 }
