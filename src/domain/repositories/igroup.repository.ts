@@ -5,4 +5,10 @@ export interface IGroupRepository {
   findManyByIds(ids: number[]): Promise<VkGroup[]>;
   save(group: VkGroup): Promise<void>;
   deleteById(id: number): Promise<void>;
+  countSubscriptionsForUser(userId: number): Promise<number>;
+  findSubscriptionGroupIds(
+    userId: number,
+    limit?: number,
+    offset?: number,
+  ): Promise<number[]>;
 }

@@ -8,12 +8,10 @@ import { FetchVkUserUseCase } from "src/application/use-cases/vk-user/fetch-vk-u
 import { FetchVkUserSubscriptionsUseCase } from "src/application/use-cases/vk-user/fetch-vk-user-subscriptions.usecase";
 import { GetVkSubscriptionsUseCase } from "src/application/use-cases/vk-user/get-vk-subscriptions.usecase";
 import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
-import { ThriftArangoStubService } from "src/thrift/services/thrift-arango-stub.service";
-import { ArangoModule } from "src/arango/arango.module";
-import settings from "src/settings";
+import { ArangoRepositoriesModule } from "src/infrastructure/arango/arango-repositories.module";
 
 @Module({
-  imports: [HttpModule, ArangoModule.forRoot()],
+  imports: [HttpModule, ArangoRepositoriesModule],
   providers: [
     VkApiService,
     {

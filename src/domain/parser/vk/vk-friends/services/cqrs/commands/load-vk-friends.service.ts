@@ -17,7 +17,24 @@ export class LoadVkFriendsService implements CQRSService {
     params: VkFriendsGetParams,
   ): Promise<{ savedIds: number[]; failedIds: number[] }> {
     try {
-      const friendsData = await this.vkApiService.friendsGet(params);
+      const defaultFields = [
+        "id",
+        "first_name",
+        "last_name",
+        "sex",
+        "bdate",
+        "city",
+        "country",
+        "photo_50",
+        "photo_100",
+        "last_seen",
+        "is_closed",
+        "deactivated",
+      ];
+      const friendsData = await this.vkApiService.friendsGet({
+        ...params,
+        fields: params.fields && params.fields.length > 0 ? params.fields : defaultFields,
+      });
       if (friendsData.items && friendsData.items.length > 0) {
         const friends = friendsData.items.filter(
           (item): item is any => typeof item === "object" && item !== null,
