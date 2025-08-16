@@ -1,13 +1,12 @@
 import { Injectable, Inject } from "@nestjs/common";
-import { CQRSService } from "src/common/interfaces";
 import { Database, aql } from "arangojs";
 import { VkFriendsResponse } from "src/domain/parser/vk/interfaces";
 
 @Injectable()
-export class GetVkFriendsService implements CQRSService {
+export class GetVkFriendsUseCase {
   constructor(@Inject("ARANGODB_CLIENT") private readonly db: Database) {}
 
-  public async execute(
+  async execute(
     user_id: number,
     count?: number,
     offset?: number,

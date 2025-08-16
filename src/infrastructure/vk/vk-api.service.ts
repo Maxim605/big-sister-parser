@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { HttpModule, HttpService } from "@nestjs/axios";
 import { lastValueFrom } from "rxjs";
 import settings from "src/settings";
+import { IVkApiClient } from "src/application/ports/vk-api.client";
 import {
   VkFriendsGetParams,
   VkFriendsGetResponse,
@@ -9,10 +10,10 @@ import {
   VkUsersGetResponse,
   VkUsersGetSubscriptionsParams,
   VkUsersGetSubscriptionsResponse,
-} from "../interfaces";
+} from "src/domain/parser/vk/interfaces";
 
 @Injectable()
-export class VkApiService {
+export class VkApiService implements IVkApiClient {
   private readonly baseUrl = settings.vkApi.baseUrl;
   constructor(private readonly httpService: HttpService) {}
 

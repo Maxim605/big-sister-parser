@@ -78,3 +78,8 @@ export interface VkUsersGetSubscriptionsResponse {
     items: Array<number | VkGroupInfo>;
   };
 }
+
+export interface VkFriendsResponse {
+  count: number;
+  items: Array<number>;
+}

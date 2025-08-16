@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { CQRSService } from "src/common/interfaces";
-import { VkApiService } from "../../../../services/vk-api.service";
+import { VkApiService } from "src/infrastructure/vk/vk-api.service";
 import { VkUsersGetParams, VkUsersGetResponse } from "../../../../interfaces";
 import { VK_FETCH_DELAY } from "src/constants";
 

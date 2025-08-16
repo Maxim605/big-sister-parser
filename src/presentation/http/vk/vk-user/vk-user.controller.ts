@@ -1,13 +1,17 @@
 import { Controller, Get, Logger, Query, Post } from "@nestjs/common";
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger";
 import { API_V1, USER_TAG, VK_TAG } from "src/constants";
 import { VkUsersGetParamsDto, VkUsersGetSubscriptionsParamsDto } from "./dto";
-import { LoadVkUserService } from "./services/cqrs/commands/load-vk-user.service";
-import { LoadVkUserSubscriptionsService } from "./services/cqrs/commands/load-vk-user-subscriptions.service";
-import { GetVkUserService } from "./services/cqrs/queries/get-vk-user.service";
-import { FetchVkUserService } from "./services/cqrs/queries/fetch-vk-user.service";
-import { FetchVkUserSubscriptionsService } from "./services/cqrs/queries/fetch-vk-user-subscriptions.service";
-import { GetVkSubscriptionsService } from "./services/cqrs/queries/get-vk-subscriptions.service";
+import { LoadVkUserService } from "src/domain/parser/vk/vk-user/services/cqrs/commands/load-vk-user.service";
+import { LoadVkUserSubscriptionsService } from "src/domain/parser/vk/vk-user/services/cqrs/commands/load-vk-user-subscriptions.service";
+import { FetchVkUserUseCase } from "src/application/use-cases/vk-user/fetch-vk-user.usecase";
+import { FetchVkUserSubscriptionsUseCase } from "src/application/use-cases/vk-user/fetch-vk-user-subscriptions.usecase";
+import { GetVkSubscriptionsUseCase } from "src/application/use-cases/vk-user/get-vk-subscriptions.usecase";
 
 @ApiTags(`${VK_TAG}-${USER_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}`)
@@ -16,10 +20,9 @@ export class VkUserController {
   constructor(
     private readonly loadVkUser: LoadVkUserService,
     private readonly loadVkUserSubscriptions: LoadVkUserSubscriptionsService,
-    private readonly getVkUser: GetVkUserService,
-    private readonly fetchVkUser: FetchVkUserService,
-    private readonly fetchVkUserSubscriptions: FetchVkUserSubscriptionsService,
-    private readonly getVkSubscriptions: GetVkSubscriptionsService,
+    private readonly fetchVkUser: FetchVkUserUseCase,
+    private readonly fetchVkUserSubscriptions: FetchVkUserSubscriptionsUseCase,
+    private readonly getVkSubscriptions: GetVkSubscriptionsUseCase,
   ) {}
 
   @Get("user/fetch")
@@ -61,9 +64,14 @@ export class VkUserController {
     @Query("count") count?: number,
     @Query("offset") offset?: number,
   ) {
-    const countNum = count !== undefined && count !== null ? Number(count) : undefined;
+    const countNum =
+      count !== undefined && count !== null ? Number(count) : undefined;
     const offsetNum = Number(offset) || 0;
-    const res = await this.getVkSubscriptions.execute(Number(user_id), countNum, offsetNum);
+    const res = await this.getVkSubscriptions.execute(
+      Number(user_id),
+      countNum,
+      offsetNum,
+    );
     return res;
   }
 

@@ -1,10 +1,16 @@
 import { Controller, Get, Logger, Query, Post } from "@nestjs/common";
-import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from "@nestjs/swagger";
 import { API_V1, FRIENDS_TAG, VK_TAG } from "src/constants";
-import { VkFriendsService } from "./services/vk-friends.service";
+import { VkFriendsService } from "src/domain/parser/vk/vk-friends/services/vk-friends.service";
 import { VkFriendsGetParamsDto, VkFriendsGetResponseDto } from "./dto";
-import { FetchVkFriendsService } from "./services/cqrs/queries/fetch-vk-friends.service";
-import { GetVkFriendsService } from "./services/cqrs/queries/get-vk-friends.service";
+import { FetchVkFriendsUseCase } from "src/application/use-cases/vk-friends/fetch-vk-friends.usecase";
+import { GetVkFriendsUseCase } from "src/application/use-cases/vk-friends/get-vk-friends.usecase";
+import { VkFriendsResponse } from "src/domain/parser/vk/interfaces";
 
 @ApiTags(`${VK_TAG}-${FRIENDS_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}/${FRIENDS_TAG}`)
@@ -12,8 +18,8 @@ export class VkFriendsController {
   private readonly logger = new Logger(VkFriendsController.name);
   constructor(
     private readonly vkFriendsService: VkFriendsService,
-    private readonly fetchVkFriends: FetchVkFriendsService,
-    private readonly getVkFriends: GetVkFriendsService,
+    private readonly fetchVkFriends: FetchVkFriendsUseCase,
+    private readonly getVkFriends: GetVkFriendsUseCase,
   ) {}
 
   @Get("fetch")
@@ -42,10 +48,15 @@ export class VkFriendsController {
     @Query("user_id") user_id: number,
     @Query("count") count?: number,
     @Query("offset") offset?: number,
-  ) {
-    const countNum = count !== undefined && count !== null ? Number(count) : undefined;
+  ): Promise<VkFriendsResponse> {
+    const countNum =
+      count !== undefined && count !== null ? Number(count) : undefined;
     const offsetNum = Number(offset) || 0;
-    const res = await this.getVkFriends.execute(Number(user_id), countNum, offsetNum);
+    const res = await this.getVkFriends.execute(
+      Number(user_id),
+      countNum,
+      offsetNum,
+    );
     return res;
   }
 

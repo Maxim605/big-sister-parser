@@ -2,7 +2,25 @@ import { Injectable, Logger } from "@nestjs/common";
 import { CQRSService } from "src/common/interfaces";
 import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
 import { VkFriend } from "../../../../interfaces";
-import { VkFriendEntity } from "../../../entities/vk-friend.entity";
+
+interface VkFriendData {
+  id: number;
+  first_name: string;
+  last_name: string;
+  sex: number;
+  bdate: string;
+  city_id: number;
+  domain: string;
+  photo?: string;
+  country_id?: number;
+  school_id?: number;
+  univercity_id?: number;
+  last_seen?: string;
+  deactivated: number;
+  is_closen: number;
+  prominence?: number;
+  owner_user_id: number;
+}
 
 @Injectable()
 export class SaveVkFriendsService implements CQRSService {
@@ -29,10 +47,10 @@ export class SaveVkFriendsService implements CQRSService {
         );
       }
       for (const friend of friends) {
-        const vkFriendEntity = this.mapToEntity(friend, ownerUserId);
+        const vkFriendData = this.mapToData(friend, ownerUserId);
         try {
           await this.thriftArangoService.save(this.COLLECTION_NAME, {
-            ...vkFriendEntity,
+            ...vkFriendData,
             _key: String(friend.id),
           });
           await this.thriftArangoService.save("friendships", {
@@ -56,7 +74,7 @@ export class SaveVkFriendsService implements CQRSService {
     }
   }
 
-  private mapToEntity(vkFriend: VkFriend, ownerUserId: number): VkFriendEntity {
+  private mapToData(vkFriend: VkFriend, ownerUserId: number): VkFriendData {
     return {
       id: vkFriend.id,
       first_name: vkFriend.first_name,

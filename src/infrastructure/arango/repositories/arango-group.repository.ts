@@ -1,12 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { aql, Database } from 'arangojs';
-import { TOKENS } from '../../../common/tokens';
-import { IGroupRepository } from '../../../domain/repositories/igroup.repository';
-import { VkGroup } from '../../../domain/entities/vk-group';
+import { Inject, Injectable } from "@nestjs/common";
+import { aql, Database } from "arangojs";
+import { TOKENS } from "../../../common/tokens";
+import { IGroupRepository } from "../../../domain/repositories/igroup.repository";
+import { VkGroup } from "../../../domain/entities/vk-group";
 
 @Injectable()
 export class ArangoGroupRepository implements IGroupRepository {
-  private readonly groups = 'groups';
+  private readonly groups = "groups";
   constructor(@Inject(TOKENS.ArangoDbClient) private readonly db: Database) {}
 
   async findById(id: number): Promise<VkGroup | null> {
@@ -18,7 +18,7 @@ export class ArangoGroupRepository implements IGroupRepository {
     `);
     const doc: any = await cursor.next();
     if (!doc) return null;
-    return new VkGroup(doc.id, doc.name, doc.screenName ?? doc.screen_name);
+    return new VkGroup(doc.id, doc.name, doc.screen_name);
   }
 
   async findManyByIds(ids: number[]): Promise<VkGroup[]> {
@@ -29,14 +29,16 @@ export class ArangoGroupRepository implements IGroupRepository {
         RETURN d
     `);
     const docs: any[] = await cursor.all();
-    return docs.map((d) => new VkGroup(d.id, d.name, d.screenName ?? d.screen_name));
+    return docs.map((d) => new VkGroup(d.id, d.name, d.screen_name));
   }
 
   async save(group: VkGroup): Promise<void> {
     await this.db.query(aql`
       UPSERT { id: ${group.id} }
-      INSERT { id: ${group.id}, name: ${group.name}, screenName: ${group.screenName} }
-      UPDATE { name: ${group.name}, screenName: ${group.screenName} }
+      INSERT { id: ${group.id}, name: ${group.name}, screen_name: ${
+        group.screen_name
+      } }
+      UPDATE { name: ${group.name}, screen_name: ${group.screen_name} }
       IN ${this.db.collection(this.groups)}
     `);
   }

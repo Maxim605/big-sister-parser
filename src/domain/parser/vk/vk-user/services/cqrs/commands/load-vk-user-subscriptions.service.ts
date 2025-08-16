@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CQRSService } from "src/common/interfaces";
-import { VkApiService } from "../../../../services/vk-api.service";
+import { VkApiService } from "src/infrastructure/vk/vk-api.service";
 import { ThriftArangoService } from "src/thrift/services/thrift-arango.service";
 import { VkUsersGetSubscriptionsParams } from "../../../../interfaces";
 
@@ -16,9 +16,7 @@ export class LoadVkUserSubscriptionsService implements CQRSService {
     private readonly thriftArangoService: ThriftArangoService,
   ) {}
 
-  public async execute(
-    params: VkUsersGetSubscriptionsParams,
-  ): Promise<{
+  public async execute(params: VkUsersGetSubscriptionsParams): Promise<{
     savedUserIds: number[];
     savedGroupIds: number[];
     savedSubscriptionKeys: string[];

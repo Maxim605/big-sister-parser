@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { CQRSService } from "src/common/interfaces";
-import { VkApiService } from "../../../../services/vk-api.service";
+import { VkApiService } from "src/infrastructure/vk/vk-api.service";
 import {
   VkFriendsGetParams,
   VkFriendsGetResponse,
@@ -19,7 +19,11 @@ export class FetchVkFriendsService implements CQRSService {
       let allItems: any[] = [];
       let total = 0;
       for (;;) {
-        const res = await this.vkApiService.friendsGet({ ...params, count: batchSize, offset });
+        const res = await this.vkApiService.friendsGet({
+          ...params,
+          count: batchSize,
+          offset,
+        });
         total = res.count;
         const items = res.items ?? [];
         allItems = allItems.concat(items);
