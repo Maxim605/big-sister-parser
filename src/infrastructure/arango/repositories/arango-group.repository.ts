@@ -90,7 +90,9 @@ export class ArangoGroupRepository implements IGroupRepository {
         FOR e IN ${this.db.collection(this.subscriptions)}
           FILTER e._from == u._id
           LIMIT ${safeOffset}, ${limit}
-          RETURN TO_NUMBER(SPLIT(e._to, '/')[1])
+          LET g = DOCUMENT(e._to)
+          FILTER g != null
+          RETURN TO_NUMBER(g.id)
       `);
       return await cursor.all();
     }
@@ -104,7 +106,9 @@ export class ArangoGroupRepository implements IGroupRepository {
       FILTER u != null
       FOR e IN ${this.db.collection(this.subscriptions)}
         FILTER e._from == u._id
-        RETURN TO_NUMBER(SPLIT(e._to, '/')[1])
+        LET g = DOCUMENT(e._to)
+        FILTER g != null
+        RETURN TO_NUMBER(g.id)
     `);
     return await cursorAll.all();
   }

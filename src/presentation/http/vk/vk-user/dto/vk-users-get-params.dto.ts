@@ -73,7 +73,6 @@ export class VkUsersGetSubscriptionsParamsDto {
 
   @ApiPropertyOptional({
     description: "Смещение",
-    example: 0,
     type: Number,
   })
   @IsOptional()
@@ -83,7 +82,6 @@ export class VkUsersGetSubscriptionsParamsDto {
 
   @ApiPropertyOptional({
     description: "Количество",
-    example: 50,
     type: Number,
   })
   @IsOptional()
@@ -94,7 +92,6 @@ export class VkUsersGetSubscriptionsParamsDto {
   @ApiProperty({
     description: "Доп. поля для групп",
     required: false,
-    example: ["description"],
     type: [String],
   })
   @IsOptional()

@@ -36,8 +36,8 @@ export class ArangoSubscriptionRepository implements ISubscriptionRepository {
         if (!u) return;
 
         const toIds = db._query(
-          'FOR gid IN @gids LET g = DOCUMENT(@groups, TO_STRING(gid)) FILTER g != null RETURN g._id',
-          { gids: params.groupIds, groups: params.groups }
+          'FOR gid IN @gids LET g = FIRST(FOR gg IN ' + params.groups + ' FILTER gg.id == gid LIMIT 1 RETURN gg) FILTER g != null RETURN g._id',
+          { gids: params.groupIds }
         ).toArray();
 
         db._query(
