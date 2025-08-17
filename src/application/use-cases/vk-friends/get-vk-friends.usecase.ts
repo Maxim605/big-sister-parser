@@ -1,5 +1,5 @@
 import { Injectable, Inject } from "@nestjs/common";
-import { VkFriendsResponse } from "src/domain/parser/vk/interfaces";
+import { VkFriendsResponse } from "src/infrastructure/vk/types";
 import { TOKENS } from "src/common/tokens";
 import { IFriendshipRepository } from "src/domain/repositories/ifriendship.repository";
 

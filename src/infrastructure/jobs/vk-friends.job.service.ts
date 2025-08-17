@@ -3,7 +3,7 @@ import { Queue, Worker, JobsOptions, Job } from "bullmq";
 import Redis from "ioredis";
 import { TOKENS } from "src/common/tokens";
 import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-vk-friends.usecase";
-import { VkFriendsGetParams } from "src/domain/parser/vk/interfaces";
+import { VkFriendsGetParams } from "src/infrastructure/vk/types";
 
 export const VK_FRIENDS_QUEUE = "vk-friends-load";
 

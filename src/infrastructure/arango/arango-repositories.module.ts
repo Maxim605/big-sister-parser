@@ -3,6 +3,7 @@ import { ArangoUserRepository } from "./repositories/arango-user.repository";
 import { ArangoGroupRepository } from "./repositories/arango-group.repository";
 import { ArangoPostRepository } from "./repositories/arango-post.repository";
 import { ArangoFriendshipRepository } from "./repositories/arango-friendship.repository";
+import { ArangoSubscriptionRepository } from "./repositories/arango-subscription.repository";
 import { TOKENS } from "../../common/tokens";
 import { ArangoModule } from "../../arango/arango.module";
 
@@ -16,12 +17,17 @@ import { ArangoModule } from "../../arango/arango.module";
       provide: TOKENS.IFriendshipRepository,
       useClass: ArangoFriendshipRepository,
     },
+    {
+      provide: TOKENS.ISubscriptionRepository,
+      useClass: ArangoSubscriptionRepository,
+    },
   ],
   exports: [
     TOKENS.IUserRepository,
     TOKENS.IGroupRepository,
     TOKENS.IPostRepository,
     TOKENS.IFriendshipRepository,
+    TOKENS.ISubscriptionRepository,
   ],
 })
 export class ArangoRepositoriesModule {}

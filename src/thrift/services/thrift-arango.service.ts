@@ -9,9 +9,7 @@ export class ThriftArangoService implements OnModuleInit {
   private client: any;
   private connection: any;
 
-  onModuleInit() {
-    // Не создаем соединение при инициализации, а только при необходимости
-  }
+  onModuleInit() {}
 
   private async ensureConnection() {
     if (!this.connection || !this.client) {
@@ -30,7 +28,6 @@ export class ThriftArangoService implements OnModuleInit {
 
   async save(collection: string, fields: Record<string, any>) {
     await this.ensureConnection();
-    // Thrift требует map<string, string>, поэтому сериализуем значения
     const stringFields: Record<string, string> = {};
     for (const key in fields) {
       if (fields[key] !== undefined && fields[key] !== null) {

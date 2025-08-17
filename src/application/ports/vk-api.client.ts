@@ -5,7 +5,7 @@ import {
   VkUsersGetResponse,
   VkUsersGetSubscriptionsParams,
   VkUsersGetSubscriptionsResponse,
-} from "src/domain/parser/vk/interfaces";
+} from "src/infrastructure/vk/types";
 
 export interface IVkApiClient {
   friendsGet(params: VkFriendsGetParams): Promise<VkFriendsGetResponse>;

@@ -18,7 +18,7 @@ import { API_V1, FRIENDS_TAG, VK_TAG } from "src/constants";
 import { VkFriendsGetParamsDto, VkFriendsGetResponseDto } from "./dto";
 import { FetchVkFriendsUseCase } from "src/application/use-cases/vk-friends/fetch-vk-friends.usecase";
 import { GetVkFriendsUseCase } from "src/application/use-cases/vk-friends/get-vk-friends.usecase";
-import { VkFriendsResponse } from "src/domain/parser/vk/interfaces";
+import { VkFriendsResponse } from "src/infrastructure/vk/types";
 import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-vk-friends.usecase";
 import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.service";
 import { Observable } from "rxjs";

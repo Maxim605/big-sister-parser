@@ -5,6 +5,7 @@ export const TOKENS = {
   IPostRepository: Symbol("IPostRepository"),
   IFriendshipRepository: Symbol("IFriendshipRepository"),
   IApiKeyRepository: Symbol("IApiKeyRepository"),
+  ISubscriptionRepository: Symbol("ISubscriptionRepository"),
 
   ISocialApiClient: Symbol("ISocialApiClient"),
 

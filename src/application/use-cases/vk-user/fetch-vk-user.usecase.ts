@@ -3,7 +3,7 @@ import { IVkApiClient } from "src/application/ports/vk-api.client";
 import {
   VkUsersGetParams,
   VkUsersGetResponse,
-} from "src/domain/parser/vk/interfaces";
+} from "src/infrastructure/vk/types";
 
 @Injectable()
 export class FetchVkUserUseCase {

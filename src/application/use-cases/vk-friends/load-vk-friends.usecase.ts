@@ -4,7 +4,7 @@ import { TOKENS } from "src/common/tokens";
 import { IFriendshipRepository } from "src/domain/repositories/ifriendship.repository";
 import { IUserRepository } from "src/domain/repositories/iuser.repository";
 import { VkUser } from "src/domain/entities/vk-user";
-import { VkFriendsGetParams } from "src/domain/parser/vk/interfaces";
+import { VkFriendsGetParams } from "src/infrastructure/vk/types";
 
 @Injectable()
 export class LoadVkFriendsUseCase {

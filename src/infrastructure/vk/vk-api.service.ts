@@ -10,7 +10,7 @@ import {
   VkUsersGetResponse,
   VkUsersGetSubscriptionsParams,
   VkUsersGetSubscriptionsResponse,
-} from "src/domain/parser/vk/interfaces";
+} from "src/infrastructure/vk/types";
 import { TOKENS } from "src/common/tokens";
 import { IKeyManager } from "src/application/services/key-manager.port";
 
