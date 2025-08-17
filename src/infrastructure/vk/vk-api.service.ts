@@ -10,6 +10,7 @@ import {
   VkUsersGetResponse,
   VkUsersGetSubscriptionsParams,
   VkUsersGetSubscriptionsResponse,
+  VkApiError,
 } from "src/infrastructure/vk/types";
 import { TOKENS } from "src/common/tokens";
 import { IKeyManager } from "src/application/services/key-manager.port";
@@ -31,7 +32,11 @@ export class VkApiService implements IVkApiClient {
     if (providedToken) {
       const url = makeUrl(providedToken);
       const { data } = await lastValueFrom(this.httpService.get(url));
-      if (data.error) throw new Error(`VK API error: ${data.error.error_msg}`);
+      if (data?.error) {
+        const code = Number(data.error.error_code) || 0;
+        const msg = data.error.error_msg || "VK API error";
+        throw new VkApiError(code, msg);
+      }
       return data.response ?? data;
     }
 
@@ -47,9 +52,10 @@ export class VkApiService implements IVkApiClient {
           const resp = await lastValueFrom(this.httpService.get(url));
           const result = resp.data;
           if (result?.error) {
+            const errCode = Number(result.error.error_code) || 0;
             const errMsg = result.error.error_msg || "VK API error";
             await this.keyManager.releaseKey(lease, { statusCode: 400 });
-            throw new Error(`VK API error: ${errMsg}`);
+            throw new VkApiError(errCode, errMsg);
           }
           await this.keyManager.releaseKey(lease, {
             statusCode: resp.status,

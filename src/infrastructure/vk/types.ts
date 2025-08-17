@@ -83,3 +83,13 @@ export interface VkFriendsResponse {
   count: number;
   items: Array<number>;
 }
+
+export class VkApiError extends Error {
+  constructor(
+    public code: number,
+    public msg: string,
+  ) {
+    super(`VK API error ${code}: ${msg}`);
+    this.name = "VkApiError";
+  }
+}

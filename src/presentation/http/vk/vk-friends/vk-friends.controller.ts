@@ -7,6 +7,7 @@ import {
   Sse,
   MessageEvent,
   BadRequestException,
+  Res,
 } from "@nestjs/common";
 import {
   ApiOkResponse,
@@ -25,6 +26,8 @@ import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { VkFriendsQueueEventsService } from "src/infrastructure/queue/vk-friends-queue-events.service";
 import { FriendsStreamEvent } from "src/application/use-cases/vk-friends/dto/friends-stream.events";
+import { VkApiError } from "src/infrastructure/vk/types";
+import { Response } from "express";
 
 @ApiTags(`${VK_TAG}-${FRIENDS_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}/${FRIENDS_TAG}`)
@@ -41,17 +44,27 @@ export class VkFriendsController {
   @Get("fetch")
   @ApiOperation({ summary: "Получить друзей из VK API (без сохранения)" })
   @ApiOkResponse({ type: () => VkFriendsGetResponseDto })
-  async fetch(@Query() query: VkFriendsGetParamsDto) {
-    const res = await this.fetchVkFriends.execute({
-      user_id: query.user_id,
-      access_token: (query as any).access_token,
-      count: query.count,
-      offset: query.offset,
-      fields: query.fields,
-      order: query.order,
-      name_case: query.name_case,
-    });
-    return { count: res.count, items: res.items } as VkFriendsGetResponseDto;
+  async fetch(@Query() query: VkFriendsGetParamsDto, @Res() res: Response) {
+    try {
+      const data = await this.fetchVkFriends.execute({
+        user_id: query.user_id,
+        access_token: (query as any).access_token,
+        count: query.count,
+        offset: query.offset,
+        fields: query.fields,
+        order: query.order,
+        name_case: query.name_case,
+      });
+      return res.json({
+        count: data.count,
+        items: data.items,
+      } as VkFriendsGetResponseDto);
+    } catch (e: any) {
+      if (e instanceof VkApiError) {
+        return res.status(400).json({ error_code: e.code, error_msg: e.msg });
+      }
+      throw e;
+    }
   }
 
   @Get("get")
@@ -85,8 +98,19 @@ export class VkFriendsController {
     schema: { example: { processed: 123, failed: 0 } },
   })
   async loadSync(@Query() params: VkFriendsGetParamsDto) {
-    const result = await this.loadVkFriends.execute(params as any);
-    return result;
+    try {
+      const result = await this.loadVkFriends.execute(params as any);
+      return result;
+    } catch (e: any) {
+      if (e instanceof VkApiError) {
+        // Map VK error to 400 with code and message
+        throw new BadRequestException({
+          error_code: e.code,
+          error_msg: e.msg,
+        });
+      }
+      throw e;
+    }
   }
 
   @Post("load/async")
