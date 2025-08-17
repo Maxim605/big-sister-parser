@@ -1,5 +1,8 @@
 # пример конфига
 debug: true
+envSecret: "dev-insecure-secret-key-32bytes!"
+
+enableThrift: false
 basePath: "big-sister-parser"
 host: "http://localhost:3000/"
 
@@ -16,6 +19,10 @@ arango: {
   database: 'big-sister-parser',
   username: 'root',
   password: 'test',
+}
+
+redis: {
+  url: "redis://127.0.0.1:6379"
 }
 
 vkApi:

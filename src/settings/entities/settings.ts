@@ -10,6 +10,7 @@ import {
 import { Db } from "./db";
 import { VkApi } from "./vk-api";
 import { Arango } from "./arango";
+import { Redis } from "./redis";
 
 /**
  * Глобальные настройки приложения.
@@ -20,6 +21,10 @@ export class Settings {
   @IsDefined()
   @IsBoolean()
   public debug = false;
+
+  @IsDefined()
+  @IsString()
+  public envSecret: string;
 
   @IsDefined()
   @IsString()
@@ -42,9 +47,22 @@ export class Settings {
 
   @IsDefined()
   @ValidateNested()
+  @Type(() => Redis)
+  public redis: Redis;
+
+  @IsDefined()
+  @ValidateNested()
   @Type(() => VkApi)
   public vkApi: VkApi;
 
   @IsOptional()
+  @IsBoolean()
+  public enableThrift = false;
+
+  @IsOptional()
   public credentials?: any;
+
+  @IsOptional()
+  @IsString()
+  public apiVersion?: string;
 }

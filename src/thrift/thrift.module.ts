@@ -6,7 +6,6 @@ import { ThriftController } from "./thrift.controller";
 
 const thrift = require("thrift");
 const path = require("path");
-const arangoService = require("./gen-nodejs/ArangoService"); // TODO: fix path
 
 @Global()
 @Module({
@@ -16,6 +15,18 @@ const arangoService = require("./gen-nodejs/ArangoService"); // TODO: fix path
     {
       provide: "THRIFT_SERVER",
       useFactory: async (db: Database) => {
+        let arangoService: any;
+        try {
+          arangoService = require(path.join(
+            __dirname,
+            "gen-nodejs",
+            "ArangoService",
+          ));
+        } catch (e) {
+          throw new Error(
+            "Thrift generated service not found. Run 'npm run gen-thrift' or disable Thrift via settings.enableThrift=false.",
+          );
+        }
         const handler = {
           async save(req) {
             try {
