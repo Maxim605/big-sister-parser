@@ -3,7 +3,11 @@ import { IsNumber, IsOptional } from "class-validator";
 import { Type } from "class-transformer";
 
 export class VkUsersGetSubscriptionsDbParamsDto {
-  @ApiProperty({ description: "ID пользователя VK", example: 508133099, type: Number })
+  @ApiProperty({
+    description: "ID пользователя VK",
+    example: 508133099,
+    type: Number,
+  })
   @IsNumber()
   @Type(() => Number)
   user_id: number;

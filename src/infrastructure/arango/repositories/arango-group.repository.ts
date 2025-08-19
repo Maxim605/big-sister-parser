@@ -45,6 +45,22 @@ export class ArangoGroupRepository implements IGroupRepository {
     `);
   }
 
+  async saveMany(groups: VkGroup[]): Promise<void> {
+    if (!groups?.length) return;
+    const payload = groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      screen_name: g.screen_name,
+    }));
+    await this.db.query(aql`
+      FOR g IN ${payload}
+        UPSERT { id: g.id }
+          INSERT { id: g.id, name: g.name, screen_name: g.screen_name }
+          UPDATE { name: g.name, screen_name: g.screen_name }
+          IN ${this.db.collection(this.groups)}
+    `);
+  }
+
   async deleteById(id: number): Promise<void> {
     await this.db.query(aql`
       FOR d IN ${this.db.collection(this.groups)}

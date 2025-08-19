@@ -17,16 +17,23 @@ export class VkUserSubscriptionsJobService implements OnModuleDestroy {
     @Inject(TOKENS.RedisClient) private readonly redis: Redis,
     private readonly loadUseCase: LoadVkUserSubscriptionsUseCase,
   ) {
+    const defaultAttempts = Number(process.env.VK_SUBS_ATTEMPTS || 5);
+    const defaultBackoff = Number(process.env.VK_SUBS_BACKOFF_MS || 2000);
+    const concurrency = Number(process.env.VK_SUBS_WORKER_CONCURRENCY || 1);
+
     this.queue = new Queue(VK_USER_SUBSCRIPTIONS_QUEUE, {
       connection: this.redis as any,
+      defaultJobOptions: {
+        attempts: defaultAttempts,
+        backoff: { type: "exponential", delay: defaultBackoff },
+        removeOnComplete: { age: 60 * 60 * 24, count: 1000 },
+        removeOnFail: { age: 60 * 60 * 24 * 7 },
+      },
     });
 
     this.worker = new Worker(
       VK_USER_SUBSCRIPTIONS_QUEUE,
       async (job: Job<{ params: VkUsersGetSubscriptionsParams }>) => {
-        this.logger.log(
-          `Processing subscriptions job ${job.id} for user ${job.data.params.user_id}`,
-        );
         try {
           await job.updateProgress({
             message: "started",
@@ -45,14 +52,27 @@ export class VkUserSubscriptionsJobService implements OnModuleDestroy {
           throw e;
         }
       },
-      { connection: this.redis as any, concurrency: 1 },
+      {
+        connection: this.redis as any,
+        concurrency,
+        settings: {
+          repeatStrategy: (attemptsMade: number) => {
+            const base =
+              defaultBackoff * Math.pow(2, Math.max(0, attemptsMade - 1));
+            const jitter = Math.floor(Math.random() * (base * 0.2));
+            return base + jitter;
+          },
+        },
+      },
     );
 
     this.worker.on("completed", (job) => {
       this.logger.log(`Subscriptions job ${job.id} completed`);
     });
     this.worker.on("failed", (job, err) => {
-      this.logger.warn(`Subscriptions job ${job?.id} failed: ${err?.message}`);
+      this.logger.warn(
+        `Subscriptions job ${job?.id} failed (attempt ${job?.attemptsMade}): ${err?.message}`,
+      );
     });
   }
 
@@ -60,7 +80,11 @@ export class VkUserSubscriptionsJobService implements OnModuleDestroy {
     const job = await this.queue.add(
       "load",
       { params },
-      { attempts: 1, removeOnComplete: 50, removeOnFail: 100, ...opts },
+      {
+        removeOnComplete: 50,
+        removeOnFail: 100,
+        ...(opts || {}),
+      },
     );
     return job.id;
   }

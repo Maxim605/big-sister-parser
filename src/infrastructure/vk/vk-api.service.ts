@@ -165,7 +165,9 @@ export class VkApiService implements IVkApiClient {
         Object.prototype.hasOwnProperty.call(raw, "count") &&
         Array.isArray((raw as any).items)
       ) {
-        return { groups: { count: raw.count, items: raw.items } } as VkUsersGetSubscriptionsResponse;
+        return {
+          groups: { count: raw.count, items: raw.items },
+        } as VkUsersGetSubscriptionsResponse;
       }
     }
     return raw as VkUsersGetSubscriptionsResponse;

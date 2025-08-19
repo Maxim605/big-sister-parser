@@ -16,7 +16,7 @@ import {
   ApiQuery,
   ApiTags,
 } from "@nestjs/swagger";
-import { API_V1, USER_TAG, VK_TAG } from "src/constants";
+import { API_V1, USER_TAG, VK_ERROR_RETRY_DELAY, VK_TAG } from "src/constants";
 import {
   VkUsersGetParamsDto,
   VkUsersGetSubscriptionsParamsDto,
@@ -57,7 +57,7 @@ export class VkUserController {
     return res;
   }
 
-  @Get(`${USER_TAG}/fetch/subscriptions`)
+  @Get(`${USER_TAG}/subscriptions/fetch`)
   @ApiOperation({ summary: "Получить подписки пользователя из VK API" })
   @ApiOkResponse({ description: "Ответ VK" })
   async fetchSubscriptions(@Query() params: VkUsersGetSubscriptionsParamsDto) {
@@ -72,12 +72,10 @@ export class VkUserController {
     return res;
   }
 
-  @Get(`${USER_TAG}/get/subscriptions`)
+  @Get(`${USER_TAG}/subscriptions/get`)
   @ApiOperation({ summary: "Получить подписки пользователя из базы" })
   @ApiOkResponse({ description: "Список group ids" })
-  async getSubscriptions(
-    @Query() params: VkUsersGetSubscriptionsDbParamsDto,
-  ) {
+  async getSubscriptions(@Query() params: VkUsersGetSubscriptionsDbParamsDto) {
     const countNum =
       params.count !== undefined && params.count !== null
         ? Number(params.count)
@@ -173,7 +171,7 @@ export class VkUserController {
           id,
           {
             attempts: 3,
-            backoff: { type: "exponential", delay: 2000 },
+            backoff: { type: "exponential", delay: VK_ERROR_RETRY_DELAY },
           },
           {
             access_token,
