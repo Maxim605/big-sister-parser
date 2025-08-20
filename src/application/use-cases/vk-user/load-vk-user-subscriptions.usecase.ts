@@ -25,7 +25,7 @@ export class LoadVkUserSubscriptionsUseCase {
 
   async execute(params: VkUsersGetSubscriptionsParams): Promise<{
     processedGroups: number;
-    groupIds: number[];
+    groupIdsPreview: number[];
   }> {
     const userId = params.user_id;
 
@@ -35,48 +35,85 @@ export class LoadVkUserSubscriptionsUseCase {
       this.logger.warn(`Failed to upsert user ${userId}: ${e.message}`);
     }
 
-    const res = await this.api.usersGetSubscriptions({
-      ...params,
-      extended: true,
-    });
-    const items = res?.groups?.items ?? [];
+    const pageSize = Math.min(Math.max(params.count ?? 200, 1), 200); // VK ограничивает до 200
+    let offset = params.offset ?? 0;
 
-    const groupIds: number[] = [];
-    const toSave: VkGroup[] = [];
+    let totalCount: number | undefined;
+    let page = 0;
+    let processed = 0;
+    const preview: number[] = [];
+    let resetDone = false;
 
-    for (const it of items) {
-      if (typeof it === "number") {
-        groupIds.push(it);
-        toSave.push(new VkGroup(it, String(it), String(it)));
-      } else if (it && typeof it === "object") {
-        const g = it as VkGroupInfo;
-        groupIds.push(g.id);
-        toSave.push(
-          new VkGroup(
-            g.id,
-            g.name ?? String(g.id),
-            g.screen_name ?? String(g.id),
-          ),
+    while (true) {
+      const res = await this.api.usersGetSubscriptions({
+        ...params,
+        extended: true,
+        offset,
+        count: pageSize,
+      });
+
+      const items = res?.groups?.items ?? [];
+      const groupsCount = (res as any)?.groups?.count ?? -1;
+      if (totalCount === undefined && groupsCount >= 0)
+        totalCount = groupsCount;
+
+      if (!Array.isArray(items) || items.length === 0) break;
+
+      const chunkIds: number[] = [];
+      const chunkGroups: VkGroup[] = [];
+      for (const it of items) {
+        if (typeof it === "number") {
+          chunkIds.push(it);
+          chunkGroups.push(new VkGroup(it, String(it), String(it)));
+        } else if (it && typeof it === "object") {
+          const g = it as VkGroupInfo;
+          chunkIds.push(g.id);
+          chunkGroups.push(
+            new VkGroup(
+              g.id,
+              g.name ?? String(g.id),
+              g.screen_name ?? String(g.id),
+            ),
+          );
+        }
+      }
+      const uniqueIds = Array.from(new Set(chunkIds));
+      const map = new Map<number, VkGroup>();
+      for (const g of chunkGroups) map.set(g.id, g);
+      const uniqueGroups = Array.from(map.values());
+
+      try {
+        await this.groups.saveMany(uniqueGroups);
+      } catch (e: any) {
+        this.logger.warn(
+          `Failed to upsert groups batch size=${uniqueGroups.length}: ${e?.message}`,
         );
       }
-    }
 
-    for (const g of toSave) {
       try {
-        await this.groups.save(g);
+        if (!resetDone) {
+          await this.subs.resetUserGroups(userId);
+          resetDone = true;
+        }
+        await this.subs.addUserGroups(userId, uniqueIds);
       } catch (e: any) {
-        this.logger.warn(`Failed to upsert group ${g.id}: ${e.message}`);
+        this.logger.error(
+          `Failed to add subscriptions chunk for ${userId}: ${e.message}`,
+        );
       }
+
+      processed += uniqueIds.length;
+      for (const id of uniqueIds) {
+        if (preview.length < 50) preview.push(id);
+      }
+
+      offset += items.length;
+      page++;
+
+      if (totalCount !== undefined && offset >= totalCount) break;
+      if (items.length < pageSize) break;
     }
 
-    try {
-      await this.subs.upsertUserGroups(userId, groupIds);
-    } catch (e: any) {
-      this.logger.error(
-        `Failed to upsert subscriptions for ${userId}: ${e.message}`,
-      );
-    }
-
-    return { processedGroups: groupIds.length, groupIds };
+    return { processedGroups: processed, groupIdsPreview: preview };
   }
 }

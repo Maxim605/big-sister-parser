@@ -8,9 +8,14 @@ import { GetVkSubscriptionsUseCase } from "src/application/use-cases/vk-user/get
 import { LoadVkUserSubscriptionsUseCase } from "src/application/use-cases/vk-user/load-vk-user-subscriptions.usecase";
 import { ArangoRepositoriesModule } from "src/infrastructure/arango/arango-repositories.module";
 import { KeyModule } from "src/infrastructure/key/key.module";
+import { RedisModule } from "src/infrastructure/redis/redis.module";
+import { Queue } from "bullmq";
+import { TOKENS } from "src/common/tokens";
+import { VkUserSubscriptionsJobService } from "src/infrastructure/jobs/vk-user-subscriptions.job.service";
+import { VkUserSubscriptionsQueueEventsService } from "src/infrastructure/queue/vk-user-subscriptions-queue-events.service";
 
 @Module({
-  imports: [HttpModule, ArangoRepositoriesModule, KeyModule],
+  imports: [HttpModule, ArangoRepositoriesModule, KeyModule, RedisModule],
   providers: [
     VkApiService,
     {
@@ -21,8 +26,21 @@ import { KeyModule } from "src/infrastructure/key/key.module";
     FetchVkUserSubscriptionsUseCase,
     GetVkSubscriptionsUseCase,
     LoadVkUserSubscriptionsUseCase,
+    VkUserSubscriptionsJobService,
+    {
+      provide: Queue,
+      useFactory: (redis) => {
+        return new Queue("vk-user-subscriptions-load", { connection: redis });
+      },
+      inject: [TOKENS.RedisClient],
+    },
+    VkUserSubscriptionsQueueEventsService,
   ],
   controllers: [VkUserController],
-  exports: [VkApiService],
+  exports: [
+    VkApiService,
+    VkUserSubscriptionsJobService,
+    VkUserSubscriptionsQueueEventsService,
+  ],
 })
 export class VkUserModule {}

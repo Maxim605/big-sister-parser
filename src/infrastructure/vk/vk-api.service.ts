@@ -155,9 +155,21 @@ export class VkApiService implements IVkApiClient {
       return `${this.baseUrl}/users.getSubscriptions?${query.toString()}`;
     };
 
-    return (await this.getWithLeasing<VkUsersGetSubscriptionsResponse>(
-      urlBuilder,
-      token,
-    )) as VkUsersGetSubscriptionsResponse;
+    const raw = (await this.getWithLeasing<any>(urlBuilder, token)) as any;
+
+    if (raw && typeof raw === "object") {
+      if (raw.groups && typeof raw.groups === "object") {
+        return raw as VkUsersGetSubscriptionsResponse;
+      }
+      if (
+        Object.prototype.hasOwnProperty.call(raw, "count") &&
+        Array.isArray((raw as any).items)
+      ) {
+        return {
+          groups: { count: raw.count, items: raw.items },
+        } as VkUsersGetSubscriptionsResponse;
+      }
+    }
+    return raw as VkUsersGetSubscriptionsResponse;
   }
 }

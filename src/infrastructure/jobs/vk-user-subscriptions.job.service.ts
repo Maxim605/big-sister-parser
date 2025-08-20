@@ -2,26 +2,26 @@ import { Inject, Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { Queue, Worker, JobsOptions, Job } from "bullmq";
 import Redis from "ioredis";
 import { TOKENS } from "src/common/tokens";
-import { LoadVkFriendsUseCase } from "src/application/use-cases/vk-friends/load-vk-friends.usecase";
-import { VkFriendsGetParams } from "src/infrastructure/vk/types";
+import { LoadVkUserSubscriptionsUseCase } from "src/application/use-cases/vk-user/load-vk-user-subscriptions.usecase";
+import { VkUsersGetSubscriptionsParams } from "src/infrastructure/vk/types";
 
-export const VK_FRIENDS_QUEUE = "vk-friends-load";
+export const VK_USER_SUBSCRIPTIONS_QUEUE = "vk-user-subscriptions-load";
 
 @Injectable()
-export class VkFriendsJobService implements OnModuleDestroy {
-  private readonly logger = new Logger(VkFriendsJobService.name);
+export class VkUserSubscriptionsJobService implements OnModuleDestroy {
+  private readonly logger = new Logger(VkUserSubscriptionsJobService.name);
   private queue: Queue;
   private worker?: Worker;
 
   constructor(
     @Inject(TOKENS.RedisClient) private readonly redis: Redis,
-    private readonly loadUseCase: LoadVkFriendsUseCase,
+    private readonly loadUseCase: LoadVkUserSubscriptionsUseCase,
   ) {
-    const defaultAttempts = Number(process.env.VK_FRIENDS_ATTEMPTS || 5);
-    const defaultBackoff = Number(process.env.VK_FRIENDS_BACKOFF_MS || 2000);
-    const concurrency = Number(process.env.VK_FRIENDS_WORKER_CONCURRENCY || 1);
+    const defaultAttempts = Number(process.env.VK_SUBS_ATTEMPTS || 5);
+    const defaultBackoff = Number(process.env.VK_SUBS_BACKOFF_MS || 2000);
+    const concurrency = Number(process.env.VK_SUBS_WORKER_CONCURRENCY || 1);
 
-    this.queue = new Queue(VK_FRIENDS_QUEUE, {
+    this.queue = new Queue(VK_USER_SUBSCRIPTIONS_QUEUE, {
       connection: this.redis as any,
       defaultJobOptions: {
         attempts: defaultAttempts,
@@ -32,41 +32,20 @@ export class VkFriendsJobService implements OnModuleDestroy {
     });
 
     this.worker = new Worker(
-      VK_FRIENDS_QUEUE,
-      async (job: Job<{ params: VkFriendsGetParams }>) => {
-        this.logger.log(
-          `Processing job ${job.id} for user ${job.data.params.user_id}`,
-        );
+      VK_USER_SUBSCRIPTIONS_QUEUE,
+      async (job: Job<{ params: VkUsersGetSubscriptionsParams }>) => {
         try {
           await job.updateProgress({
+            message: "started",
             processed: 0,
             failed: 0,
-            message: "started",
           });
-          let processed = 0;
-          let failed = 0;
-          const res = await this.loadUseCase.execute(job.data.params, {
-            onBatch: async (stats) => {
-              processed += stats.savedUsers;
-              await job.updateProgress({
-                processed,
-                failed,
-                message: "batch saved",
-              });
-            },
-            onError: async (err) => {
-              failed += 1;
-              await job.updateProgress({
-                processed,
-                failed,
-                message: `error: ${err.message}`,
-              });
-            },
-            onLog: async (msg, level) => {
-              await job.log(`[${level || "info"}] ${msg}`);
-            },
+          const res = await this.loadUseCase.execute(job.data.params);
+          await job.updateProgress({
+            message: "completed",
+            processed: res.processedGroups,
+            failed: 0,
           });
-          await job.updateProgress({ processed, failed, message: "completed" });
           return res;
         } catch (e: any) {
           this.logger.error(`Job ${job.id} failed: ${e?.message || e}`);
@@ -88,16 +67,16 @@ export class VkFriendsJobService implements OnModuleDestroy {
     );
 
     this.worker.on("completed", (job) => {
-      this.logger.log(`Job ${job.id} completed`);
+      this.logger.log(`Subscriptions job ${job.id} completed`);
     });
     this.worker.on("failed", (job, err) => {
       this.logger.warn(
-        `Job ${job?.id} failed (attempt ${job?.attemptsMade}): ${err?.message}`,
+        `Subscriptions job ${job?.id} failed (attempt ${job?.attemptsMade}): ${err?.message}`,
       );
     });
   }
 
-  async addLoadJob(params: VkFriendsGetParams, opts?: JobsOptions) {
+  async addLoadJob(params: VkUsersGetSubscriptionsParams, opts?: JobsOptions) {
     const job = await this.queue.add(
       "load",
       { params },
