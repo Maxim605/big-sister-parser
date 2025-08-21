@@ -21,6 +21,9 @@
         "test:e2e": "jest --config ./test/jest-e2e.json",
         "prettier": "prettier --write \"src/**/*.+(js|jsx|ts|tsx|json|css|scss|less|sass)\"",
         "migrate:arango": "npm run gen-thrift && ts-node src/migrations/1751961990-InitMigration.ts",
+        "migrate": "npm run gen-thrift && npx ts-node -r tsconfig-paths/register src/migrations/setup/cli.ts migrate",
+        "migrate:rollback": "npm run gen-thrift && npx ts-node -r tsconfig-paths/register src/migrations/setup/cli.ts rollback",
+        "migrate:status": "npm run gen-thrift && npx ts-node -r tsconfig-paths/register src/migrations/setup/cli.ts status",
         "depcruise:ci": "depcruise --config .dependency-cruiser.ci.js src",
         "depcruise:dev": "depcruise --config .dependency-cruiser.dev.js src",
         "depcruise:graph": "depcruise --config .dependency-cruiser.dev.js --output-type dot src | dot -T svg > dependency-graph.svg"
