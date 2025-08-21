@@ -79,3 +79,49 @@ vkApi:
 Если в настройках установлен `debug: true`, по адресу `/api/v1` доступен SwaggerUI с описанием схемы API. (TODO)
 
 ---
+
+## Миграции ArangoDB
+
+Система управления миграциями для ArangoDB с поддержкой наката и отката миграций.
+
+### CLI Команды
+
+#### Накат миграций
+
+Применить все pending миграции:
+
+```bash
+npm run migrate
+```
+
+#### Откат миграций
+
+Откатить последнюю миграцию:
+
+```bash
+npm run migrate:rollback
+```
+
+Откатить несколько последних миграций:
+
+```bash
+npm run migrate:rollback -- --count 3
+```
+
+#### Просмотр статуса
+
+Показать статус всех миграций:
+
+```bash
+npm run migrate:status
+```
+
+### Создание новой миграции
+
+1. Создайте новый файл в папке `src/migrations/` с именем `{timestamp}-{MigrationName}.ts`
+2. Реализуйте методы `up()` и `down()` по образцу существующих миграций
+3. Добавьте миграцию в `src/migrations/migration-loader.ts`
+
+Подробная документация: [src/migrations/README.md](src/migrations/README.md)
+
+---
