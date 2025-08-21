@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Database } from 'arangojs';
-import settings from '../../settings';
+import { Injectable, Logger } from "@nestjs/common";
+import { Database } from "arangojs";
+import settings from "../../settings";
 
 @Injectable()
 export class ConnectionCheckerService {
@@ -20,44 +20,65 @@ export class ConnectionCheckerService {
 
   async checkConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      const cursor = await this.db.query('RETURN 1');
+      const cursor = await this.db.query("RETURN 1");
       await cursor.next();
-      return { success: true, message: 'ArangoDB connection successful' };
+      return { success: true, message: "ArangoDB connection successful" };
     } catch (error) {
-      return { success: false, message: `Failed to connect to ArangoDB: ${error.message}` };
+      return {
+        success: false,
+        message: `Failed to connect to ArangoDB: ${error.message}`,
+      };
     }
   }
 
   async checkDatabaseExists(): Promise<{ exists: boolean; message: string }> {
     try {
-      const cursor = await this.db.query('RETURN 1');
+      const cursor = await this.db.query("RETURN 1");
       await cursor.next();
-      return { exists: true, message: 'Database exists and is accessible' };
+      return { exists: true, message: "Database exists and is accessible" };
     } catch (error) {
-      if (error.message.includes('database not found') || error.message.includes('404')) {
-        return { exists: false, message: `Database '${settings.arango.database}' does not exist` };
+      if (
+        error.message.includes("database not found") ||
+        error.message.includes("404")
+      ) {
+        return {
+          exists: false,
+          message: `Database '${settings.arango.database}' does not exist`,
+        };
       }
       throw error;
     }
   }
 
-  async createDatabaseIfNotExists(): Promise<{ success: boolean; message: string }> {
+  async createDatabaseIfNotExists(): Promise<{
+    success: boolean;
+    message: string;
+  }> {
     try {
       const checkResult = await this.checkDatabaseExists();
       if (checkResult.exists) {
-        return { success: true, message: 'Database already exists' };
+        return { success: true, message: "Database already exists" };
       }
 
       const systemDb = new Database({
         url: settings.arango.url,
-        databaseName: '_system',
-        auth: { username: settings.arango.username, password: settings.arango.password },
+        databaseName: "_system",
+        auth: {
+          username: settings.arango.username,
+          password: settings.arango.password,
+        },
       });
 
       await systemDb.createDatabase(settings.arango.database);
-      return { success: true, message: `Database '${settings.arango.database}' created successfully` };
+      return {
+        success: true,
+        message: `Database '${settings.arango.database}' created successfully`,
+      };
     } catch (error) {
-      return { success: false, message: `Failed to create database: ${error.message}` };
+      return {
+        success: false,
+        message: `Failed to create database: ${error.message}`,
+      };
     }
   }
-} 
+}

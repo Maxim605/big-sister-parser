@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Database } from 'arangojs';
-import { Migration, MigrationRecord, MigrationResult } from './types';
-import settings from '../../settings';
+import { Injectable, Logger } from "@nestjs/common";
+import { Database } from "arangojs";
+import { Migration, MigrationRecord, MigrationResult } from "./types";
+import settings from "../../settings";
 
 @Injectable()
 export class MigrationService {
@@ -20,20 +20,20 @@ export class MigrationService {
   }
 
   private async ensureMigrationsCollection(): Promise<void> {
-    const collection = this.db.collection('migrations');
+    const collection = this.db.collection("migrations");
     if (!(await collection.exists())) {
-      await this.db.createCollection('migrations');
+      await this.db.createCollection("migrations");
     }
   }
 
   private async getAppliedMigrations(): Promise<MigrationRecord[]> {
     await this.ensureMigrationsCollection();
-    const cursor = await this.db.query('FOR doc IN migrations RETURN doc');
+    const cursor = await this.db.query("FOR doc IN migrations RETURN doc");
     return await cursor.all();
   }
 
   private async markMigrationAsApplied(migration: Migration): Promise<void> {
-    const collection = this.db.collection('migrations');
+    const collection = this.db.collection("migrations");
     await collection.save({
       migration_id: migration.id,
       name: migration.name,
@@ -44,8 +44,8 @@ export class MigrationService {
 
   private async markMigrationAsReverted(migrationId: string): Promise<void> {
     const cursor = await this.db.query(
-      'FOR doc IN migrations FILTER doc.migration_id == @migrationId REMOVE doc IN migrations',
-      { migrationId }
+      "FOR doc IN migrations FILTER doc.migration_id == @migrationId REMOVE doc IN migrations",
+      { migrationId },
     );
     await cursor.next();
   }
@@ -53,16 +53,16 @@ export class MigrationService {
   async migrate(availableMigrations: Migration[]): Promise<MigrationResult> {
     try {
       const appliedMigrations = await this.getAppliedMigrations();
-      const appliedIds = new Set(appliedMigrations.map(m => m.migration_id));
-      
+      const appliedIds = new Set(appliedMigrations.map((m) => m.migration_id));
+
       const pendingMigrations = availableMigrations
-        .filter(m => !appliedIds.has(m.id))
+        .filter((m) => !appliedIds.has(m.id))
         .sort((a, b) => a.timestamp - b.timestamp);
 
       if (pendingMigrations.length === 0) {
         return {
           success: true,
-          message: 'No pending migrations to apply',
+          message: "No pending migrations to apply",
           appliedMigrations: [],
         };
       }
@@ -81,7 +81,7 @@ export class MigrationService {
         appliedMigrations: applied,
       };
     } catch (error) {
-      this.logger.error('Migration failed:', error);
+      this.logger.error("Migration failed:", error);
       return {
         success: false,
         message: `Migration failed: ${error.message}`,
@@ -89,14 +89,17 @@ export class MigrationService {
     }
   }
 
-  async rollback(availableMigrations: Migration[], count: number = 1): Promise<MigrationResult> {
+  async rollback(
+    availableMigrations: Migration[],
+    count: number = 1,
+  ): Promise<MigrationResult> {
     try {
       const appliedMigrations = await this.getAppliedMigrations();
-      
+
       if (appliedMigrations.length === 0) {
         return {
           success: true,
-          message: 'No migrations to rollback',
+          message: "No migrations to rollback",
           revertedMigrations: [],
         };
       }
@@ -108,9 +111,11 @@ export class MigrationService {
       const reverted: string[] = [];
 
       for (const record of migrationsToRevert) {
-        const migration = availableMigrations.find(m => m.id === record.migration_id);
+        const migration = availableMigrations.find(
+          (m) => m.id === record.migration_id,
+        );
         if (!migration) continue;
-        
+
         await migration.down();
         await this.markMigrationAsReverted(record.migration_id);
         reverted.push(migration.name);
@@ -122,7 +127,7 @@ export class MigrationService {
         revertedMigrations: reverted,
       };
     } catch (error) {
-      this.logger.error('Rollback failed:', error);
+      this.logger.error("Rollback failed:", error);
       return {
         success: false,
         message: `Rollback failed: ${error.message}`,
@@ -132,12 +137,14 @@ export class MigrationService {
 
   async status(availableMigrations: Migration[]): Promise<void> {
     const appliedMigrations = await this.getAppliedMigrations();
-    const appliedIds = new Set(appliedMigrations.map(m => m.migration_id));
+    const appliedIds = new Set(appliedMigrations.map((m) => m.migration_id));
 
-    for (const migration of availableMigrations.sort((a, b) => a.timestamp - b.timestamp)) {
+    for (const migration of availableMigrations.sort(
+      (a, b) => a.timestamp - b.timestamp,
+    )) {
       const isApplied = appliedIds.has(migration.id);
-      const status = isApplied ? '✅ Applied' : '⏳ Pending';
+      const status = isApplied ? "✅ Applied" : "⏳ Pending";
       console.log(`${status} ${migration.name} (${migration.id})`);
     }
   }
-} 
+}

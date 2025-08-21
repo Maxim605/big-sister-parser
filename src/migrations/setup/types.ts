@@ -28,4 +28,4 @@ export interface MigrationResult {
   message: string;
   appliedMigrations?: string[];
   revertedMigrations?: string[];
-} 
+}

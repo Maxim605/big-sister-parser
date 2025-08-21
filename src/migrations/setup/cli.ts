@@ -22,9 +22,9 @@ async function bootstrap() {
   try {
     await CommandFactory.run(MigrationCliModule);
   } catch (error) {
-    console.error('Error running CLI:', error);
+    console.error("Error running CLI:", error);
     process.exit(1);
   }
 }
 
-bootstrap(); 
+bootstrap();

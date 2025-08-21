@@ -1,9 +1,9 @@
-import { Command, Option } from 'nest-commander';
-import { Injectable } from '@nestjs/common';
-import { MigrationService } from '../setup/migration.service';
-import { BaseCommand } from '../setup/base-command';
-import { ConnectionCheckerService } from '../setup/connection-checker.service';
-import { getAvailableMigrations } from '../setup/migration-loader';
+import { Command, Option } from "nest-commander";
+import { Injectable } from "@nestjs/common";
+import { MigrationService } from "../setup/migration.service";
+import { BaseCommand } from "../setup/base-command";
+import { ConnectionCheckerService } from "../setup/connection-checker.service";
+import { getAvailableMigrations } from "../setup/migration-loader";
 
 interface RollbackOptions {
   count?: number;
@@ -11,21 +11,21 @@ interface RollbackOptions {
 
 @Injectable()
 @Command({
-  name: 'rollback',
-  description: 'Rollback migrations',
+  name: "rollback",
+  description: "Rollback migrations",
   options: { isDefault: false },
 })
 export class RollbackCommand extends BaseCommand {
   constructor(
     private readonly migrationService: MigrationService,
-    connectionChecker: ConnectionCheckerService
+    connectionChecker: ConnectionCheckerService,
   ) {
     super(connectionChecker);
   }
 
   @Option({
-    flags: '-c, --count <number>',
-    description: 'Number of migrations to rollback (default: 1)',
+    flags: "-c, --count <number>",
+    description: "Number of migrations to rollback (default: 1)",
   })
   parseCount(val: string): number {
     return parseInt(val, 10);
@@ -35,23 +35,26 @@ export class RollbackCommand extends BaseCommand {
     try {
       const count = options?.count || 1;
       if (count <= 0) {
-        this.logger.error('❌ Count must be a positive number');
+        this.logger.error("❌ Count must be a positive number");
         process.exit(1);
       }
 
       if (!(await this.performConnectionCheck())) {
-        this.logger.error('❌ Connection check failed. Exiting.');
+        this.logger.error("❌ Connection check failed. Exiting.");
         process.exit(1);
       }
-      
+
       const availableMigrations = await getAvailableMigrations();
       if (availableMigrations.length === 0) {
-        this.logger.log('ℹ️ No migrations found');
+        this.logger.log("ℹ️ No migrations found");
         return;
       }
 
-      const result = await this.migrationService.rollback(availableMigrations, count);
-      
+      const result = await this.migrationService.rollback(
+        availableMigrations,
+        count,
+      );
+
       if (result.success) {
         this.logger.log(`✅ ${result.message}`);
       } else {
@@ -59,8 +62,8 @@ export class RollbackCommand extends BaseCommand {
         process.exit(1);
       }
     } catch (error) {
-      this.logger.error('Rollback command failed:', error);
+      this.logger.error("Rollback command failed:", error);
       process.exit(1);
     }
   }
-} 
+}

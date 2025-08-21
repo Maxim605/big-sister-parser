@@ -4,8 +4,8 @@ import settings from "../settings";
 
 export class InitMigration1751961990 {
   private db: Database;
-  public readonly id = '1751961990';
-  public readonly name = 'InitMigration';
+  public readonly id = "1751961990";
+  public readonly name = "InitMigration";
   public readonly timestamp = 1751961990;
 
   constructor() {
@@ -21,7 +21,7 @@ export class InitMigration1751961990 {
 
   async up(): Promise<void> {
     console.log("🔄 Running InitMigration up...");
-    
+
     for (const name of ["users", "groups"]) {
       const col = this.db.collection(name);
       if (!(await col.exists())) {
@@ -45,7 +45,7 @@ export class InitMigration1751961990 {
 
   async down(): Promise<void> {
     console.log("🔄 Running InitMigration down...");
-    
+
     for (const name of ["users", "groups", "subscriptions", "friendships"]) {
       const col = this.db.collection(name);
       if (await col.exists()) {

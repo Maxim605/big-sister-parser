@@ -1,6 +1,6 @@
-import { CommandRunner } from 'nest-commander';
-import { Injectable, Logger } from '@nestjs/common';
-import { ConnectionCheckerService } from './connection-checker.service';
+import { CommandRunner } from "nest-commander";
+import { Injectable, Logger } from "@nestjs/common";
+import { ConnectionCheckerService } from "./connection-checker.service";
 
 @Injectable()
 export abstract class BaseCommand extends CommandRunner {
@@ -20,7 +20,8 @@ export abstract class BaseCommand extends CommandRunner {
   }
 
   protected async ensureDatabaseExists(): Promise<boolean> {
-    const createResult = await this.connectionChecker.createDatabaseIfNotExists();
+    const createResult =
+      await this.connectionChecker.createDatabaseIfNotExists();
     if (!createResult.success) {
       this.logger.error(`❌ ${createResult.message}`);
       return false;
@@ -33,6 +34,4 @@ export abstract class BaseCommand extends CommandRunner {
     if (!(await this.ensureDatabaseExists())) return false;
     return true;
   }
-
-
-} 
+}
