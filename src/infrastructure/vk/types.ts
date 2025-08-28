@@ -7,7 +7,7 @@ export interface VkFriendsGetParams {
   fields?: string[];
   name_case?: "nom" | "gen" | "dat" | "acc" | "ins" | "abl";
   token?: string;
-  access_token?: string;
+  access_token: string;
 }
 
 export interface VkFriendsGetResponse {
@@ -46,7 +46,7 @@ export interface VkUsersGetParams {
   fields?: string[];
   name_case?: "nom" | "gen" | "dat" | "acc" | "ins" | "abl";
   token?: string;
-  access_token?: string;
+  access_token: string;
 }
 
 export interface VkUsersGetResponse {
@@ -58,7 +58,7 @@ export interface VkUsersGetResponse {
 export interface VkUsersGetSubscriptionsParams {
   user_id: number;
   token?: string;
-  access_token?: string;
+  access_token: string;
   extended?: boolean;
   offset?: number;
   count?: number;

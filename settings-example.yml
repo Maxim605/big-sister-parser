@@ -28,3 +28,6 @@ redis: {
 vkApi:
   baseUrl: "https://api.vk.com/method"
   version: "5.131"
+
+token: 
+  vkDefault: "vk1.a.abcdef123456..."
