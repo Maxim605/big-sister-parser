@@ -22,7 +22,7 @@ export class AddWallCollections1755735724 {
   async up(): Promise<void> {
     console.log("🔄 Running AddWallCollections up...");
 
-    for (const name of ["comment", "posts"]) {
+    for (const name of ["posts"]) {
       const col = this.db.collection(name);
       if (!(await col.exists())) {
         await this.db.createCollection(name);
@@ -31,20 +31,12 @@ export class AddWallCollections1755735724 {
         console.log(`ℹ️ Document collection '${name}' already exists`);
       }
     }
-
-    const authoredCol = this.db.collection("authored");
-    if (!(await authoredCol.exists())) {
-      await this.db.createEdgeCollection("authored");
-      console.log(`✅ Edge collection 'authored' created`);
-    } else {
-      console.log(`ℹ️ Edge collection 'authored' already exists`);
-    }
   }
 
   async down(): Promise<void> {
     console.log("🔄 Running CreateCollections down...");
 
-    for (const name of ["comment", "posts", "authored"]) {
+    for (const name of ["posts"]) {
       const col = this.db.collection(name);
       if (await col.exists()) {
         await col.drop();
