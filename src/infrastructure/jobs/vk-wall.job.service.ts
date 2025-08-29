@@ -3,10 +3,10 @@ import { Queue, Worker, JobsOptions, Job } from "bullmq";
 import Redis from "ioredis";
 import * as crypto from "crypto";
 import { TOKENS } from "src/common/tokens";
-import { LoadWallGetUseCase } from "src/application/use-cases/vk-wall/load-wall-get.usecase";
-import { LoadWallGetByIdUseCase } from "src/application/use-cases/vk-wall/load-wall-get-by-id.usecase";
+import { LoadWallByOwnerCommand } from "src/application/commands/vk-wall/load-wall-by-owner.command";
+import { LoadWallByIdsCommand } from "src/application/commands/vk-wall/load-wall-by-ids.command";
 import settings from "src/settings";
-import { IVkWallApiClient } from "src/infrastructure/vk/ivk-api.client";
+import { IVkWallApiClient } from "src/application/ports/ivk-wall-api.client";
 
 export const VK_WALL_QUEUE = "vk-wall-load";
 
@@ -25,8 +25,8 @@ export class VkWallJobService implements OnModuleDestroy {
 
   constructor(
     @Inject(TOKENS.RedisClient) private readonly redis: Redis,
-    private readonly loadByOwner: LoadWallGetUseCase,
-    private readonly loadByIds: LoadWallGetByIdUseCase,
+    private readonly loadByOwner: LoadWallByOwnerCommand,
+    private readonly loadByIds: LoadWallByIdsCommand,
     @Inject(TOKENS.IVkWallApiClient) private readonly api: IVkWallApiClient,
   ) {
     const attempts = settings.vkWall.queue.attempts;

@@ -1,9 +1,10 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { IVkWallApiClient } from "src/infrastructure/vk/ivk-api.client";
+import { IVkWallApiClient } from "src/application/ports/ivk-wall-api.client";
 import { IPostRepository } from "src/domain/repositories/ipost.repository";
 import { VkPost } from "src/domain/entities/vk-post";
 import settings from "src/settings";
 import { TOKENS } from "src/common/tokens";
+import { IMetricsService } from "src/application/ports/imetrics.service";
 
 @Injectable()
 export class LoadWallGetByIdUseCase {
@@ -12,7 +13,7 @@ export class LoadWallGetByIdUseCase {
     @Inject(TOKENS.IVkWallApiClient)
     private readonly vkClient: IVkWallApiClient,
     @Inject(TOKENS.IPostRepository) private readonly postRepo: IPostRepository,
-    @Inject(TOKENS.RedisClient) private readonly redis: any,
+    @Inject(TOKENS.IMetricsService) private readonly metrics: IMetricsService,
   ) {}
 
   async execute(params: {
@@ -43,7 +44,7 @@ export class LoadWallGetByIdUseCase {
         attempt++;
         try {
           try {
-            await this.redis?.incr?.("metrics:vk_api_calls_total");
+            await this.metrics.incr("metrics:vk_api_calls_total");
           } catch {}
 
           const res = await this.vkClient.wallGetById({ posts: chunk });
@@ -70,11 +71,11 @@ export class LoadWallGetByIdUseCase {
             chunkSize: dbBatchSize,
           });
           try {
-            await this.redis?.incrby?.(
+            await this.metrics.incr(
               "metrics:posts_parsed_total",
               postsToUpsert.length,
             );
-            await this.redis?.incrby?.(
+            await this.metrics.incr(
               "metrics:db_batches_total",
               Math.ceil(postsToUpsert.length / dbBatchSize),
             );
@@ -87,7 +88,7 @@ export class LoadWallGetByIdUseCase {
           if (attempt > retries) {
             failedChunks.push({ index, chunk, error: String(e?.message || e) });
             try {
-              await this.redis?.incr?.("metrics:failed_batches_total");
+              await this.metrics.incr("metrics:failed_batches_total");
             } catch {}
           } else {
             const backoff =

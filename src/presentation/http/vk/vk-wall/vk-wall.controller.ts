@@ -8,13 +8,13 @@ import {
   MessageEvent,
 } from "@nestjs/common";
 import { ApiOperation, ApiQuery, ApiTags } from "@nestjs/swagger";
-import { LoadWallGetUseCase } from "src/application/use-cases/vk-wall/load-wall-get.usecase";
-import { LoadWallGetByIdUseCase } from "src/application/use-cases/vk-wall/load-wall-get-by-id.usecase";
+import { LoadWallByOwnerCommand } from "src/application/commands/vk-wall/load-wall-by-owner.command";
+import { LoadWallByIdsCommand } from "src/application/commands/vk-wall/load-wall-by-ids.command";
 import { VkWallJobService } from "src/infrastructure/jobs/vk-wall.job.service";
 import settings from "src/settings";
 import { WallfetchParamsDto } from "./dto/wall-fetch-params.dto";
 import { WallGetParamsDto } from "./dto/wall-get-params.dto";
-import { IVkWallApiClient } from "src/infrastructure/vk/ivk-api.client";
+import { IVkWallApiClient } from "src/application/ports/ivk-wall-api.client";
 import { Inject } from "@nestjs/common";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
@@ -22,22 +22,22 @@ import { Queue } from "bullmq";
 import { TOKENS } from "src/common/tokens";
 import { VkWallQueueEventsService } from "src/infrastructure/queue/vk-wall-queue-events.service";
 import { WallLoadParamsDto } from "./dto/wall-load-params.dto";
-import { IPostRepository } from "src/domain/repositories/ipost.repository";
 import { VK_ERROR_RETRY_DELAY } from "src/constants";
 import { VkApiError } from "src/infrastructure/vk/types";
 import { Logger } from "@nestjs/common";
+import { GetWallByOwnerQuery } from "src/application/queries/vk-wall/get-wall-by-owner.query";
 
 @ApiTags("vk-wall")
 @Controller("vk/wall")
 export class VkWallController {
   private readonly logger = new Logger(VkWallController.name);
   constructor(
-    private readonly loadByOwner: LoadWallGetUseCase,
-    private readonly loadByIds: LoadWallGetByIdUseCase,
+    private readonly loadByOwner: LoadWallByOwnerCommand,
+    private readonly loadByIds: LoadWallByIdsCommand,
     private readonly jobs: VkWallJobService,
     @Inject(TOKENS.IVkWallApiClient) private readonly api: IVkWallApiClient,
     private readonly wallQueueEvents: VkWallQueueEventsService,
-    @Inject(TOKENS.IPostRepository) private readonly posts: IPostRepository,
+    private readonly getWallByOwnerQuery: GetWallByOwnerQuery,
   ) {}
 
   @Get("load")
@@ -247,25 +247,17 @@ export class VkWallController {
     );
 
     if (hasPaging) {
-      const items = await this.posts.findByOwner(dto.owner_id!, {
+      const items = await this.getWallByOwnerQuery.execute({
+        ownerId: dto.owner_id!,
         offset: dto.offset,
         count: pageSize,
       });
       return { items } as any;
     }
 
-    const all: any[] = [];
-    let offset = 0;
-    for (;;) {
-      const batch = await this.posts.findByOwner(dto.owner_id!, {
-        offset,
-        count: pageSize,
-      });
-      if (!batch.length) break;
-      all.push(...batch);
-      offset += batch.length;
-      if (batch.length < pageSize) break;
-    }
+    const all = await this.getWallByOwnerQuery.execute({
+      ownerId: dto.owner_id!,
+    });
     return { items: all } as any;
   }
 }

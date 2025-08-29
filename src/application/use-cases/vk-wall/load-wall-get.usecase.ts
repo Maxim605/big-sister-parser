@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import settings from "src/settings";
 import { IPostRepository } from "src/domain/repositories/ipost.repository";
 import { TOKENS } from "src/common/tokens";
-import { IVkWallApiClient } from "src/infrastructure/vk/ivk-api.client";
+import { IVkWallApiClient } from "src/application/ports/ivk-wall-api.client";
 import { VkPost, makePostKey } from "src/domain/entities/vk-post";
 import { WallProcessingPool } from "src/application/services/wall-processing-pool.service";
 
@@ -25,7 +25,6 @@ export class LoadWallGetUseCase {
 
   constructor(
     @Inject(TOKENS.IPostRepository) private readonly postRepo: IPostRepository,
-    @Inject(TOKENS.RedisClient) private readonly redis: any, // TODO: метрики/идемпотентность
     @Inject(TOKENS.IVkWallApiClient) private readonly vk: IVkWallApiClient,
   ) {}
 

@@ -4,7 +4,8 @@ import { lastValueFrom } from "rxjs";
 import settings from "src/settings";
 import { IKeyManager } from "src/application/services/key-manager.port";
 import { TOKENS } from "src/common/tokens";
-import { IVkWallApiClient } from "./ivk-api.client";
+import { IVkWallApiClient } from "src/application/ports/ivk-wall-api.client";
+import { ApiKeyLease } from "src/application/services/key-manager.types";
 
 export interface RateLimiter {
   acquireToken(): Promise<void>;
@@ -14,7 +15,6 @@ export interface RateLimiter {
 @Injectable()
 export class VkWallApiClient implements IVkWallApiClient {
   private readonly baseUrl = settings.vkApi.baseUrl.replace(/\/$/, "");
-  private readonly logger = new Logger(VkWallApiClient.name);
 
   constructor(
     private readonly http: HttpService,
@@ -26,7 +26,7 @@ export class VkWallApiClient implements IVkWallApiClient {
     method: string,
     params: Record<string, any>,
     providedToken?: string,
-    rateLimiter?: RateLimiter,
+    rateLimiterOrLease?: RateLimiter | ApiKeyLease,
   ): Promise<T> {
     const maxAttempts = 5;
     let attempt = 0;
@@ -50,8 +50,10 @@ export class VkWallApiClient implements IVkWallApiClient {
       return `${this.baseUrl}/${method}?${query}`;
     };
 
+    // If token is explicitly provided, just call with given token
     if (providedToken) {
-      if (rateLimiter) await rateLimiter.acquireToken();
+      if ((rateLimiterOrLease as any)?.acquireToken)
+        await (rateLimiterOrLease as RateLimiter).acquireToken();
       const url = buildUrl(providedToken);
       const { data } = await lastValueFrom(this.http.get(url));
       if (data?.error)
@@ -61,11 +63,15 @@ export class VkWallApiClient implements IVkWallApiClient {
       return (data.response ?? data) as T;
     }
 
-    const lease = await this.keyManager.leaseKey("vk");
+    // If lease is provided, use it directly; otherwise lease via keyManager
+    const lease: ApiKeyLease | null = (rateLimiterOrLease as any)?.tokenDecrypted
+      ? (rateLimiterOrLease as ApiKeyLease)
+      : await this.keyManager.leaseKey("vk");
+    const shouldRelease = !((rateLimiterOrLease as any)?.tokenDecrypted);
+
     try {
       while (attempt < maxAttempts) {
         attempt++;
-        if (rateLimiter) await rateLimiter.acquireToken();
         const url = buildUrl(lease.tokenDecrypted);
         try {
           const resp = await lastValueFrom(this.http.get(url));
@@ -79,7 +85,6 @@ export class VkWallApiClient implements IVkWallApiClient {
               error: payload.error,
             });
             if (code === 6) { /* TOO_MANY_REQUESTS */
-              rateLimiter?.onRateLimit?.({ code, attempt });
               const backoff = Math.min(5, attempt) * 1000;
               await new Promise((r) => setTimeout(r, backoff));
               continue;
@@ -108,7 +113,6 @@ export class VkWallApiClient implements IVkWallApiClient {
 
           lastErr = e;
           if (status === 429 || status >= 500 || status === 0) {
-            rateLimiter?.onRateLimit?.({ status, attempt });
             const retryAfter = Number(headers?.["retry-after"] ?? 0);
             const backoff = Math.max(
               retryAfter * 1000,
@@ -121,7 +125,11 @@ export class VkWallApiClient implements IVkWallApiClient {
         }
       }
       throw lastErr ?? new Error("VK API call failed after retries");
-    } finally {}
+    } finally {
+      if (shouldRelease) {
+        try { await this.keyManager.releaseKey(lease); } catch {}
+      }
+    }
   }
 
   async wallFetch(params: {
@@ -132,22 +140,22 @@ export class VkWallApiClient implements IVkWallApiClient {
     count?: number;
     filter?: string;
     extended?: number;
-  }): Promise<{
+  }, lease?: ApiKeyLease): Promise<{
     items: any[];
     count?: number;
     profiles?: any[];
     groups?: any[];
   }> {
     const { token, ...rest } = params as any;
-    return this.callWithLeasing("wall.get", rest, token);
+    return this.callWithLeasing("wall.get", rest, token, lease);
   }
 
   async wallGetById(params: {
     posts: string[];
     extended?: number;
     token?: string;
-  }): Promise<{ items: any[] }> {
+  }, lease?: ApiKeyLease): Promise<{ items: any[] }> {
     const { token, ...rest } = params as any;
-    return this.callWithLeasing("wall.getById", rest, token);
+    return this.callWithLeasing("wall.getById", rest, token, lease);
   }
 }

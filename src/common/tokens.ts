@@ -13,6 +13,11 @@ export const TOKENS = {
   IKeyManager: Symbol("IKeyManager"),
   IRateLimiter: Symbol("IRateLimiter"),
 
+  IMetricsService: Symbol("IMetricsService"),
+  IJobStatusRepository: Symbol("IJobStatusRepository"),
+  IQueueClient: Symbol("IQueueClient"),
+  IDomainEventBus: Symbol("IDomainEventBus"),
+
   ArangoDbClient: "ARANGODB_CLIENT",
   RedisClient: Symbol("RedisClient"),
   PgPool: Symbol("PgPool"),
