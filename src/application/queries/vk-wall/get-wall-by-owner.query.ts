@@ -38,4 +38,4 @@ export class GetWallByOwnerQuery {
     }
     return all;
   }
-} 
+}

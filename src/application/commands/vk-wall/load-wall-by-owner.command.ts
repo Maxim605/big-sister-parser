@@ -119,9 +119,7 @@ export class LoadWallByOwnerCommand {
               }),
           );
 
-          const keys = posts.map(
-            (p) => p._key || makePostKey(p.ownerId, p.id),
-          );
+          const keys = posts.map((p) => p._key || makePostKey(p.ownerId, p.id));
           const existing = new Set(
             await this.postRepo.bulkGetExistingKeys(keys),
           );
@@ -217,4 +215,4 @@ export class LoadWallByOwnerCommand {
       } catch {}
     }
   }
-} 
+}

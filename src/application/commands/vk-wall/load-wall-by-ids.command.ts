@@ -49,7 +49,10 @@ export class LoadWallByIdsCommand {
         while (attempt <= retries && !success) {
           attempt++;
           try {
-            const res = await this.vkClient.wallGetById({ posts: chunk }, lease);
+            const res = await this.vkClient.wallGetById(
+              { posts: chunk },
+              lease,
+            );
             const items = res.items ?? [];
 
             const postsToUpsert: VkPost[] = items.map((it: any) => {
@@ -102,9 +105,11 @@ export class LoadWallByIdsCommand {
         }
       }
     } finally {
-      try { await this.keyManager.releaseKey(lease); } catch {}
+      try {
+        await this.keyManager.releaseKey(lease);
+      } catch {}
     }
 
     return { processed, failedChunks };
   }
-} 
+}

@@ -1,3 +1,3 @@
 export interface IMetricsService {
-	incr(key: string, by?: number): Promise<void>;
-} 
+  incr(key: string, by?: number): Promise<void>;
+}

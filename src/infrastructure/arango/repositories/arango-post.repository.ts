@@ -197,7 +197,8 @@ export class ArangoPostRepository implements IPostRepository {
       }
       await Promise.race(workers).catch(() => void 0);
       for (let i = workers.length - 1; i >= 0; i--) {
-        if (workers[i].finally) {}
+        if (workers[i].finally) {
+        }
       }
       await Promise.allSettled(workers.splice(0));
     }

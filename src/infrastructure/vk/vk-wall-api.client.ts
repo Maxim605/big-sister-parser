@@ -62,10 +62,11 @@ export class VkWallApiClient implements IVkWallApiClient {
       return (data.response ?? data) as T;
     }
 
-    const lease: ApiKeyLease | null = (rateLimiterOrLease as any)?.tokenDecrypted
+    const lease: ApiKeyLease | null = (rateLimiterOrLease as any)
+      ?.tokenDecrypted
       ? (rateLimiterOrLease as ApiKeyLease)
       : await this.keyManager.leaseKey("vk");
-    const shouldRelease = !((rateLimiterOrLease as any)?.tokenDecrypted);
+    const shouldRelease = !(rateLimiterOrLease as any)?.tokenDecrypted;
 
     try {
       while (attempt < maxAttempts) {
@@ -82,7 +83,8 @@ export class VkWallApiClient implements IVkWallApiClient {
               headers: resp.headers as any,
               error: payload.error,
             });
-            if (code === 6) { /* TOO_MANY_REQUESTS */
+            if (code === 6) {
+              /* TOO_MANY_REQUESTS */
               const backoff = Math.min(5, attempt) * 1000;
               await new Promise((r) => setTimeout(r, backoff));
               continue;
@@ -125,20 +127,25 @@ export class VkWallApiClient implements IVkWallApiClient {
       throw lastErr ?? new Error("VK API call failed after retries");
     } finally {
       if (shouldRelease) {
-        try { await this.keyManager.releaseKey(lease); } catch {}
+        try {
+          await this.keyManager.releaseKey(lease);
+        } catch {}
       }
     }
   }
 
-  async wallFetch(params: {
-    owner_id?: number;
-    domain?: string;
-    token: string;
-    offset?: number;
-    count?: number;
-    filter?: string;
-    extended?: number;
-  }, lease?: ApiKeyLease): Promise<{
+  async wallFetch(
+    params: {
+      owner_id?: number;
+      domain?: string;
+      token: string;
+      offset?: number;
+      count?: number;
+      filter?: string;
+      extended?: number;
+    },
+    lease?: ApiKeyLease,
+  ): Promise<{
     items: any[];
     count?: number;
     profiles?: any[];
@@ -148,11 +155,14 @@ export class VkWallApiClient implements IVkWallApiClient {
     return this.callWithLeasing("wall.get", rest, token, lease);
   }
 
-  async wallGetById(params: {
-    posts: string[];
-    extended?: number;
-    token?: string;
-  }, lease?: ApiKeyLease): Promise<{ items: any[] }> {
+  async wallGetById(
+    params: {
+      posts: string[];
+      extended?: number;
+      token?: string;
+    },
+    lease?: ApiKeyLease,
+  ): Promise<{ items: any[] }> {
     const { token, ...rest } = params as any;
     return this.callWithLeasing("wall.getById", rest, token, lease);
   }

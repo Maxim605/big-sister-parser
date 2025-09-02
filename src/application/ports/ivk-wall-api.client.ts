@@ -23,4 +23,4 @@ export interface IVkWallApiClient {
     params: { posts: string[]; extended?: number; token?: string },
     lease?: ApiKeyLease,
   ): Promise<{ items: any[] }>;
-} 
+}

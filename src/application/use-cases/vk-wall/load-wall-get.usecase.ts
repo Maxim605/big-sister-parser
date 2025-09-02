@@ -152,7 +152,7 @@ export class LoadWallGetUseCase {
       } catch (e) {
         this.logger.warn(`Не удалось получить total: ${String(e)}`);
       }
-      const rangeEnd = total ?? (params.offset ?? 0) + pageSize * 1000; 
+      const rangeEnd = total ?? (params.offset ?? 0) + pageSize * 1000;
       const segments: Array<{ start: number; end: number; pageSize: number }> =
         [];
       const step = pageSize * 10;

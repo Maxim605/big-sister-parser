@@ -35,7 +35,7 @@ export class WallfetchParamsDto {
   offset?: number;
 
   @ApiPropertyOptional({
-    description: "Количество элементов (по дефолту 200)"
+    description: "Количество элементов (по дефолту 200)",
   })
   @Type(() => Number)
   @IsOptional()

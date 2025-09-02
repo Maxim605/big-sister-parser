@@ -4,15 +4,15 @@ import { TOKENS } from "src/common/tokens";
 
 @Injectable()
 export class RedisMetricsService implements IMetricsService {
-	constructor(@Inject(TOKENS.RedisClient) private readonly redis: any) {}
+  constructor(@Inject(TOKENS.RedisClient) private readonly redis: any) {}
 
-	async incr(key: string, by: number = 1): Promise<void> {
-		try {
-			if (typeof by === "number" && by !== 1) {
-				await this.redis.incrby?.(key, by);
-				return;
-			}
-			await this.redis.incr?.(key);
-		} catch {}
-	}
-} 
+  async incr(key: string, by: number = 1): Promise<void> {
+    try {
+      if (typeof by === "number" && by !== 1) {
+        await this.redis.incrby?.(key, by);
+        return;
+      }
+      await this.redis.incr?.(key);
+    } catch {}
+  }
+}
