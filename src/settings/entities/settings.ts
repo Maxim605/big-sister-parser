@@ -11,6 +11,8 @@ import { Db } from "./db";
 import { VkApi } from "./vk-api";
 import { Arango } from "./arango";
 import { Redis } from "./redis";
+import { VkWallSettings } from "./vk-wall";
+import { Token } from "./token";
 
 /**
  * Глобальные настройки приложения.
@@ -54,6 +56,17 @@ export class Settings {
   @ValidateNested()
   @Type(() => VkApi)
   public vkApi: VkApi;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => Token)
+  public token: Token;
+
+  // Конфигурация модуля парсинга стены VK
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => VkWallSettings)
+  public vkWall: VkWallSettings = new VkWallSettings();
 
   @IsOptional()
   @IsBoolean()
