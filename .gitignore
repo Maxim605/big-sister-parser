@@ -38,3 +38,4 @@ dependency-graph.svg
 
 # Файл с конфигурацией разработчика на локальной машине или конфигурация на проде.
 settings.yml
+settings.prod.yml

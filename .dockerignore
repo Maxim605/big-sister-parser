@@ -1,3 +1,9 @@
-node_modules/
-
-settings.yml
+node_modules
+dist
+.git
+.gitignore
+.env
+.vscode
+npm-debug.log
+.dockerignore
+*.md

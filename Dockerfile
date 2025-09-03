@@ -1,51 +1,40 @@
-FROM alpine:3.17 as build
+FROM node:24-bookworm-slim AS builder
+WORKDIR /app
 
-ENV APP_ROOT "/big-sister-parser"
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt/lists \
+    apt-get update && \
+    apt-get install -y --no-install-recommends thrift-compiler && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-RUN apk add --update tzdata \
-  nodejs=18.20.1-r0 npm \
-  ca-certificates
+COPY package.json package-lock.json ./
 
-RUN npm i -g npm@10.9.2
-RUN pkg-fetch -n node18 -p alpine
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund --progress=false
 
-RUN mkdir -p $APP_ROOT
-COPY .npmrc package*.json $APP_ROOT
+COPY . .
 
-WORKDIR $APP_ROOT
+RUN [ -f settings.yml ] || ( [ -f settings-example.yml ] && cp settings-example.yml settings.yml ) || true
 
-RUN npm i
+RUN npm run gen-thrift && npm run build
 
-ADD . .
-
-RUN npm run build
-
-RUN ncc build ./dist/main.js
-RUN pkg -c ./package.json ./dist/index.js -t node18-alpine --output exe
-
-RUN ncc build ./dist/cli.js
-RUN pkg -c ./package.json ./dist/index.js -t node18-alpine --output cli
-
-RUN find /root/.pkg-cache/v3.5/ -type f | wc -l | awk '$1!=1 {exit 1}'
-
-FROM alpine:3.17.5 as exe
-
-ENV APP_ROOT "/big-sister-parser"
-
-RUN apk add --update --no-cache tzdata ca-certificates
-
+FROM node:24-bookworm-slim AS runner
 ENV NODE_ENV=production
-ENV TZ=Europe/Moscow
+WORKDIR /app
 
-RUN cp /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+COPY package.json package-lock.json ./
 
-RUN mkdir -p $APP_ROOT
-WORKDIR $APP_ROOT
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/thrift/gen-nodejs ./dist/thrift/gen-nodejs
+COPY --from=builder /app/settings.yml ./settings.yml
 
-COPY --from=build /big-sister-parser/exe $APP_ROOT
-COPY --from=build /big-sister-parser/package.json $APP_ROOT
-COPY --from=build /big-sister-parser/cli $APP_ROOT
+RUN npm prune --production --no-audit --no-fund || true
 
 EXPOSE 3000
+CMD ["node", "dist/main.js"]
 
-CMD ["/big-sister-parser/exe"]
+# docker build -t bs-parser .
+# docker run -p 3000:3000 --name bs-parser `
+#    -v "$(pwd)/settings.yml:/app/settings.yml:ro" `
+#    bs-parser
