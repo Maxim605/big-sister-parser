@@ -9,7 +9,7 @@ export class CryptoService {
 
   constructor() {
     const isProd = process.env.NODE_ENV === "production";
-    const envSecret = process.env.SECRET_KEY;
+    const envSecret = settings.envSecret;
     if (isProd && !envSecret) {
       throw new Error("SECRET_KEY is required");
     }
