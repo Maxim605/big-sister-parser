@@ -39,7 +39,12 @@ npm run build && npm run start:prod
 Для одновременного запуска базы данных и бэкенда выполните:
 
 ```bash
-docker-compose up -d (TODO)
+docker run -d -e ARANGO_ROOT_PASSWORD="test" -p 8529:8529 arangodb/arangodb-preview:devel-nightly
+docker run -d --name redis -p 6379:6379 redis:7
+docker build --no-cache --progress=plain -t bs-parser .
+docker run --rm -p 3000:3000 --name bs-parser `
+    -v "$(pwd)/settings.prod.yml:/app/settings.yml:ro" `
+    bs-parser
 ```
 
 ---
@@ -48,6 +53,9 @@ docker-compose up -d (TODO)
 
 ```yml
 debug: true
+envSecret: "dev-insecure-secret-key-32bytes!"
+
+enableThrift: false
 basePath: "big-sister-parser"
 host: "http://localhost:3000/"
 
@@ -66,9 +74,54 @@ arango: {
   password: 'test',
 }
 
+redis: {
+  url: "redis://127.0.0.1:6379"
+}
+
 vkApi:
   baseUrl: "https://api.vk.com/method"
   version: "5.131"
+
+token: 
+  vkDefault: "vk1.a.abcdef123456..."
+
+```
+
+---
+
+## Пример прод конфига (settings.yml)
+
+```yml
+debug: false
+envSecret: "prod-insecure-secret-key-32bytes!"
+
+basePath: "big-sister-parser"
+host: "http://localhost:3000/"
+enableThrift: true
+
+db:
+  debug: true
+  host: "host.docker.internal"
+  port: 5432
+  username: "postgres"
+  password: "admin"
+  database: "big-sister"
+
+arango:
+  url: "http://host.docker.internal:8529"
+  database: "big-sister-parser"
+  username: "root"
+  password: "test"
+
+redis:
+  url: "redis://host.docker.internal:6379"
+
+vkApi:
+  baseUrl: "https://api.vk.com/method"
+  version: "5.131"
+
+token: 
+  vkDefault: "vk1.a.fEjt5bznMF-MZxX3..."
 
 ```
 
