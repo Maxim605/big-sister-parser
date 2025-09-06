@@ -8,6 +8,7 @@ import {
   IsBoolean,
 } from "class-validator";
 import { Transform, Type } from "class-transformer";
+import settings from "src/settings";
 
 export class VkUsersGetParamsDto {
   @ApiProperty({
@@ -42,7 +43,10 @@ export class VkUsersGetParamsDto {
   @IsIn(["nom", "gen", "dat", "acc", "ins", "abl"])
   name_case?: "nom" | "gen" | "dat" | "acc" | "ins" | "abl";
 
-  @ApiProperty({ description: "access_token", example: "vk1.a.abcdef" })
+  @ApiProperty({ 
+    description: "access_token", 
+    example: settings.token.vkDefault
+  })
   @IsString()
   access_token: string;
 }
@@ -57,7 +61,10 @@ export class VkUsersGetSubscriptionsParamsDto {
   @Type(() => Number)
   user_id: number;
 
-  @ApiProperty({ description: "access_token", example: "vk1.a.abcdef" })
+  @ApiProperty({ 
+    description: "access_token", 
+    example: settings.token.vkDefault 
+  })
   @IsString()
   access_token: string;
 

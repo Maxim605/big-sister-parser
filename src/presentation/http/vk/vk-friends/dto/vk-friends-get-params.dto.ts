@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNumber, IsOptional, IsString, IsArray, IsIn } from "class-validator";
 import { Transform, Type } from "class-transformer";
+import settings from "src/settings";
 
 export class VkFriendsGetParamsDto {
   @ApiProperty({
@@ -65,7 +66,7 @@ export class VkFriendsGetParamsDto {
 
   @ApiProperty({
     description: "access_token",
-    example: "vk1.a.abcdef123456...",
+    example: settings.token.vkDefault,
   })
   @IsString()
   access_token: string;
