@@ -16,3 +16,4 @@ export const VK_TAG = "vk";
 
 export const USER_TAG = "user";
 export const FRIENDS_TAG = "friends";
+export const GRAPH_TAG = "graph";
