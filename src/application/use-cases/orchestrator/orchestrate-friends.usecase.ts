@@ -6,58 +6,13 @@ import { VkFriendsGetParams, VkApiError } from "src/infrastructure/vk/types";
 import { TOKENS } from "src/common/tokens";
 import { IUserRepository } from "src/domain/repositories/iuser.repository";
 import settings from "src/settings";
-
-class Semaphore {
-  private queue: Array<() => void> = [];
-  private counter: number;
-  constructor(private readonly limit: number) {
-    this.counter = limit;
-  }
-  async acquire(): Promise<void> {
-    if (this.counter > 0) {
-      this.counter--;
-      return;
-    }
-    await new Promise<void>((resolve) => this.queue.push(resolve));
-  }
-  release() {
-    this.counter++;
-    if (this.counter > this.limit) this.counter = this.limit;
-    const r = this.queue.shift();
-    if (r) {
-      this.counter--;
-      r();
-    }
-  }
-}
-
-export interface OrchestrateFriendsParams {
-  userIds: number[];
-  batchSize?: number;
-  concurrency?: number;
-  mode: "fetch" | "load" | "get";
-  params?: Partial<VkFriendsGetParams>;
-  onProgress?: (info: {
-    processed: number;
-    total: number;
-    currentUserId?: number;
-    success?: boolean;
-    error?: string;
-  }) => void | Promise<void>;
-}
-
-export interface UserFriendsResult {
-  userId: number;
-  success: boolean;
-  error?: string;
-  data?: any;
-}
-
-export interface OrchestrateFriendsResult {
-  processed: number;
-  failed: number;
-  results: UserFriendsResult[];
-}
+import { Semaphore } from "./semaphore";
+import {
+  OrchestrateFriendsParams,
+  OrchestrateFriendsResult,
+  UserFriendsResult,
+  OrchestrateFriendsProgressCallback,
+} from "./dto";
 
 @Injectable()
 export class OrchestrateFriendsUseCase {
@@ -83,15 +38,56 @@ export class OrchestrateFriendsUseCase {
       onProgress,
     } = params;
 
-    const effectiveBatchSize = Math.min(
+    const effectiveBatchSize = this.calculateEffectiveBatchSize(batchSize);
+    const effectiveConcurrency =
+      this.calculateEffectiveConcurrency(concurrency);
+
+    const batches = this.createBatches(userIds, effectiveBatchSize);
+
+    const results: UserFriendsResult[] = [];
+    const globalCounters = { processed: 0, failed: 0 };
+
+    const semaphore = new Semaphore(effectiveConcurrency);
+
+    for (const batch of batches) {
+      const batchResults = await this.processBatch(
+        batch,
+        mode,
+        friendParams,
+        semaphore,
+        userIds.length,
+        globalCounters,
+        (info) => {
+          if (onProgress) {
+            onProgress(info);
+          }
+        },
+      );
+
+      results.push(...batchResults.results);
+      globalCounters.processed += batchResults.processed;
+      globalCounters.failed += batchResults.failed;
+    }
+
+    return {
+      processed: globalCounters.processed,
+      failed: globalCounters.failed,
+      results,
+    };
+  }
+
+  private calculateEffectiveBatchSize(batchSize?: number): number {
+    return Math.min(
       Math.max(
         batchSize ?? settings.orchestrator.friends.batch.defaultBatchSize,
         1,
       ),
       settings.orchestrator.friends.batch.maxBatchSize,
     );
+  }
 
-    const effectiveConcurrency = Math.min(
+  private calculateEffectiveConcurrency(concurrency?: number): number {
+    return Math.min(
       Math.max(
         concurrency ??
           settings.orchestrator.friends.concurrency.defaultConcurrency,
@@ -99,134 +95,191 @@ export class OrchestrateFriendsUseCase {
       ),
       settings.orchestrator.friends.concurrency.maxConcurrency,
     );
+  }
 
+  private createBatches(userIds: number[], batchSize: number): number[][] {
+    const batches: number[][] = [];
+    for (let i = 0; i < userIds.length; i += batchSize) {
+      batches.push(userIds.slice(i, i + batchSize));
+    }
+    return batches;
+  }
+
+  private async processBatch(
+    batch: number[],
+    mode: "fetch" | "load" | "get",
+    friendParams: Partial<VkFriendsGetParams> | undefined,
+    semaphore: Semaphore,
+    totalUsers: number,
+    globalCounters: { processed: number; failed: number },
+    onProgress?: OrchestrateFriendsProgressCallback,
+  ): Promise<{
+    results: UserFriendsResult[];
+    processed: number;
+    failed: number;
+  }> {
     const results: UserFriendsResult[] = [];
     let processed = 0;
     let failed = 0;
 
-    const batches: number[][] = [];
-    for (let i = 0; i < userIds.length; i += effectiveBatchSize) {
-      batches.push(userIds.slice(i, i + effectiveBatchSize));
-    }
+    const batchCounters = { processed: 0, failed: 0 };
 
-    const semaphore = new Semaphore(effectiveConcurrency);
-
-    for (const batch of batches) {
-      const batchPromises = batch.map((userId) =>
-        (async () => {
-          await semaphore.acquire();
-          try {
-            let data: any;
-            let success = true;
-            let error: string | undefined;
-
-            try {
-              switch (mode) {
-                case "fetch":
-                  data = await this.fetchUseCase.execute({
-                    user_id: userId,
-                    ...friendParams,
-                  } as VkFriendsGetParams);
-                  break;
-                case "load":
-                  data = await this.loadUseCase.execute({
-                    user_id: userId,
-                    ...friendParams,
-                  } as VkFriendsGetParams);
-                  break;
-                case "get":
-                  data = await this.getUseCase.execute(
-                    userId,
-                    friendParams?.count,
-                    friendParams?.offset,
-                  );
-                  break;
-              }
-
-              if (mode !== "get") {
-                try {
-                  await this.userRepository.updateFriendsAdded(
-                    userId,
-                    new Date(),
-                  );
-                } catch (updateErr: any) {
-                  this.logger.warn(
-                    `Failed to update friends_added for user ${userId}: ${
-                      updateErr?.message || updateErr
-                    }`,
-                  );
-                }
-              }
-
-              const result: UserFriendsResult = {
-                userId,
-                success: true,
-                data,
-              };
-              results.push(result);
-              processed++;
-
+    const batchPromises = batch.map((userId) =>
+      (async () => {
+        await semaphore.acquire();
+        try {
+          const result = await this.processUser(
+            userId,
+            mode,
+            friendParams,
+            totalUsers,
+            (info) => {
               if (onProgress) {
-                await onProgress({
-                  processed,
-                  total: userIds.length,
-                  currentUserId: userId,
-                  success: true,
+                onProgress({
+                  ...info,
+                  processed:
+                    globalCounters.processed +
+                    globalCounters.failed +
+                    batchCounters.processed +
+                    batchCounters.failed,
                 });
               }
-            } catch (e: any) {
-              success = false;
-              error = e?.message || String(e);
-              failed++;
-              this.logger.error(
-                `Failed to process user ${userId} (mode: ${mode}): ${error}`,
-              );
-
-              if (mode !== "get") {
-                try {
-                  const errorCode =
-                    e instanceof VkApiError ? e.code : undefined;
-                  if (errorCode !== undefined) {
-                    await this.userRepository.updateFriendsAdded(
-                      userId,
-                      `err:${errorCode}`,
-                    );
-                  }
-                } catch (updateErr: any) {
-                  this.logger.warn(
-                    `Failed to update friends_added (error code) for user ${userId}: ${
-                      updateErr?.message || updateErr
-                    }`,
-                  );
-                }
-              }
-
-              const result: UserFriendsResult = {
-                userId,
-                success: false,
-                error,
-              };
-              results.push(result);
-
-              if (onProgress) {
-                await onProgress({
-                  processed,
-                  total: userIds.length,
-                  currentUserId: userId,
-                  success: false,
-                  error,
-                });
-              }
-            }
-          } finally {
-            semaphore.release();
+            },
+          );
+          results.push(result);
+          if (result.success) {
+            processed++;
+            batchCounters.processed++;
+          } else {
+            failed++;
+            batchCounters.failed++;
           }
-        })(),
+        } finally {
+          semaphore.release();
+        }
+      })(),
+    );
+
+    await Promise.allSettled(batchPromises);
+
+    return { results, processed, failed };
+  }
+
+  private async processUser(
+    userId: number,
+    mode: "fetch" | "load" | "get",
+    friendParams: Partial<VkFriendsGetParams> | undefined,
+    totalUsers: number,
+    onProgress?: OrchestrateFriendsProgressCallback,
+  ): Promise<UserFriendsResult> {
+    try {
+      const data = await this.executeUserOperation(userId, mode, friendParams);
+
+      if (mode !== "get") {
+        await this.updateFriendsAddedOnSuccess(userId);
+      }
+
+      const result: UserFriendsResult = {
+        userId,
+        success: true,
+        data,
+      };
+
+      if (onProgress) {
+        await onProgress({
+          processed: 0, // будет пересчитано в execute
+          total: totalUsers,
+          currentUserId: userId,
+          success: true,
+        });
+      }
+
+      return result;
+    } catch (e: any) {
+      const error = e?.message || String(e);
+      this.logger.error(
+        `Failed to process user ${userId} (mode: ${mode}): ${error}`,
       );
 
-      await Promise.allSettled(batchPromises);
-    }
+      if (mode !== "get") {
+        await this.updateFriendsAddedOnError(userId, e);
+      }
 
-    return { processed, failed, results };
+      const result: UserFriendsResult = {
+        userId,
+        success: false,
+        error,
+      };
+
+      if (onProgress) {
+        await onProgress({
+          processed: 0, // будет пересчитано в execute
+          total: totalUsers,
+          currentUserId: userId,
+          success: false,
+          error,
+        });
+      }
+
+      return result;
+    }
+  }
+
+  private async executeUserOperation(
+    userId: number,
+    mode: "fetch" | "load" | "get",
+    friendParams: Partial<VkFriendsGetParams> | undefined,
+  ): Promise<any> {
+    switch (mode) {
+      case "fetch":
+        return await this.fetchUseCase.execute({
+          user_id: userId,
+          ...friendParams,
+        } as VkFriendsGetParams);
+      case "load":
+        return await this.loadUseCase.execute({
+          user_id: userId,
+          ...friendParams,
+        } as VkFriendsGetParams);
+      case "get":
+        return await this.getUseCase.execute(
+          userId,
+          friendParams?.count,
+          friendParams?.offset,
+        );
+    }
+  }
+
+  private async updateFriendsAddedOnSuccess(userId: number): Promise<void> {
+    try {
+      await this.userRepository.updateFriendsAdded(userId, new Date());
+    } catch (updateErr: any) {
+      this.logger.warn(
+        `Failed to update friends_added for user ${userId}: ${
+          updateErr?.message || updateErr
+        }`,
+      );
+    }
+  }
+
+  private async updateFriendsAddedOnError(
+    userId: number,
+    error: any,
+  ): Promise<void> {
+    try {
+      const errorCode = error instanceof VkApiError ? error.code : undefined;
+      if (errorCode !== undefined) {
+        await this.userRepository.updateFriendsAdded(
+          userId,
+          `err:${errorCode}`,
+        );
+      }
+    } catch (updateErr: any) {
+      this.logger.warn(
+        `Failed to update friends_added (error code) for user ${userId}: ${
+          updateErr?.message || updateErr
+        }`,
+      );
+    }
   }
 }
