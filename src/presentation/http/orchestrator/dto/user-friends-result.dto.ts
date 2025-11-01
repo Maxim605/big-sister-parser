@@ -13,4 +13,3 @@ export class UserFriendsResultDto {
   @ApiPropertyOptional({ description: "Данные ответа" })
   data?: any;
 }
-

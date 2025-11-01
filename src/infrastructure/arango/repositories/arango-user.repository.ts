@@ -18,7 +18,22 @@ export class ArangoUserRepository implements IUserRepository {
     `);
     const doc: any = await cursor.next();
     if (!doc) return null;
-    return new VkUser(doc.id, doc.first_name, doc.last_name, doc.domain);
+    const friendsAdded =
+      doc.friends_added !== undefined && doc.friends_added !== null
+        ? typeof doc.friends_added === "number"
+          ? doc.friends_added
+          : typeof doc.friends_added === "string" &&
+            doc.friends_added.startsWith("err:")
+          ? doc.friends_added
+          : new Date(doc.friends_added)
+        : undefined;
+    return new VkUser(
+      doc.id,
+      doc.first_name,
+      doc.last_name,
+      doc.domain,
+      friendsAdded,
+    );
   }
 
   async findManyByIds(ids: number[]): Promise<VkUser[]> {
@@ -29,20 +44,43 @@ export class ArangoUserRepository implements IUserRepository {
         RETURN d
     `);
     const docs: any[] = await cursor.all();
-    return docs.map(
-      (d) => new VkUser(d.id, d.first_name, d.last_name, d.domain),
-    );
+    return docs.map((d) => {
+      const friendsAdded =
+        d.friends_added !== undefined && d.friends_added !== null
+          ? typeof d.friends_added === "number"
+            ? d.friends_added
+            : typeof d.friends_added === "string" &&
+              d.friends_added.startsWith("err:")
+            ? d.friends_added
+            : new Date(d.friends_added)
+          : undefined;
+      return new VkUser(
+        d.id,
+        d.first_name,
+        d.last_name,
+        d.domain,
+        friendsAdded,
+      );
+    });
   }
 
   async save(user: VkUser): Promise<void> {
+    const friendsAddedValue =
+      user.friends_added instanceof Date
+        ? user.friends_added.toISOString()
+        : user.friends_added;
     await this.db.query(aql`
       UPSERT { _key: ${String(user.id)} }
       INSERT { _key: ${String(user.id)}, id: ${user.id}, first_name: ${
         user.first_name
-      }, last_name: ${user.last_name}, domain: ${user.domain ?? null} }
+      }, last_name: ${user.last_name}, domain: ${
+        user.domain ?? null
+      }, friends_added: ${friendsAddedValue ?? null} }
       UPDATE { id: ${user.id}, first_name: ${user.first_name}, last_name: ${
         user.last_name
-      }, domain: ${user.domain ?? null} }
+      }, domain: ${user.domain ?? null}, friends_added: ${
+        friendsAddedValue ?? null
+      } }
       IN ${this.db.collection(this.users)}
     `);
   }
@@ -54,13 +92,36 @@ export class ArangoUserRepository implements IUserRepository {
       first_name: u.first_name,
       last_name: u.last_name,
       domain: u.domain ?? null,
+      friends_added:
+        u.friends_added instanceof Date
+          ? u.friends_added.toISOString()
+          : u.friends_added ?? null,
     }));
     await this.db.query(aql`
       FOR u IN ${payload}
         UPSERT { _key: TO_STRING(u.id) }
-          INSERT { _key: TO_STRING(u.id), id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain }
-          UPDATE { id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain }
+          INSERT { _key: TO_STRING(u.id), id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain, friends_added: u.friends_added }
+          UPDATE { id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain, friends_added: u.friends_added }
           IN ${this.db.collection(this.users)}
+    `);
+  }
+
+  async updateFriendsAdded(
+    userId: number,
+    value: Date | number | string,
+  ): Promise<void> {
+    const valueToSave =
+      value instanceof Date
+        ? value.toISOString()
+        : typeof value === "string"
+        ? value
+        : value;
+    await this.db.query(aql`
+      FOR u IN ${this.db.collection(this.users)}
+        FILTER u._key == ${String(userId)}
+        UPDATE u WITH { friends_added: ${valueToSave} } IN ${this.db.collection(
+          this.users,
+        )}
     `);
   }
 

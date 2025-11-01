@@ -4,6 +4,7 @@ export class VkUser {
     public readonly first_name: string,
     public readonly last_name: string,
     public readonly domain?: string,
+    public readonly friends_added?: Date | number | string, // когда были получены друзья пользователя / либо код ошибки
   ) {}
 
   get fullName(): string {

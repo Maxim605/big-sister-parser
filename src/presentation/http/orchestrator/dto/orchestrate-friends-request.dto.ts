@@ -72,4 +72,3 @@ export class OrchestrateFriendsRequestDto {
   @IsNotEmpty()
   access_token: string;
 }
-

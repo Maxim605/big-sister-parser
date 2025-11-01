@@ -6,4 +6,8 @@ export interface IUserRepository {
   save(user: VkUser): Promise<void>;
   saveMany(users: VkUser[]): Promise<void>;
   deleteById(id: number): Promise<void>;
+  updateFriendsAdded(
+    userId: number,
+    value: Date | number | string,
+  ): Promise<void>;
 }

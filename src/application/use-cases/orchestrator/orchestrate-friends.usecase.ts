@@ -2,7 +2,9 @@ import { Injectable, Inject, Logger } from "@nestjs/common";
 import { FetchVkFriendsUseCase } from "../vk-friends/fetch-vk-friends.usecase";
 import { GetVkFriendsUseCase } from "../vk-friends/get-vk-friends.usecase";
 import { LoadVkFriendsUseCase } from "../vk-friends/load-vk-friends.usecase";
-import { VkFriendsGetParams } from "src/infrastructure/vk/types";
+import { VkFriendsGetParams, VkApiError } from "src/infrastructure/vk/types";
+import { TOKENS } from "src/common/tokens";
+import { IUserRepository } from "src/domain/repositories/iuser.repository";
 import settings from "src/settings";
 
 class Semaphore {
@@ -65,6 +67,8 @@ export class OrchestrateFriendsUseCase {
     private readonly fetchUseCase: FetchVkFriendsUseCase,
     private readonly getUseCase: GetVkFriendsUseCase,
     private readonly loadUseCase: LoadVkFriendsUseCase,
+    @Inject(TOKENS.IUserRepository)
+    private readonly userRepository: IUserRepository,
   ) {}
 
   async execute(
@@ -139,6 +143,21 @@ export class OrchestrateFriendsUseCase {
                   break;
               }
 
+              if (mode !== "get") {
+                try {
+                  await this.userRepository.updateFriendsAdded(
+                    userId,
+                    new Date(),
+                  );
+                } catch (updateErr: any) {
+                  this.logger.warn(
+                    `Failed to update friends_added for user ${userId}: ${
+                      updateErr?.message || updateErr
+                    }`,
+                  );
+                }
+              }
+
               const result: UserFriendsResult = {
                 userId,
                 success: true,
@@ -162,6 +181,25 @@ export class OrchestrateFriendsUseCase {
               this.logger.error(
                 `Failed to process user ${userId} (mode: ${mode}): ${error}`,
               );
+
+              if (mode !== "get") {
+                try {
+                  const errorCode =
+                    e instanceof VkApiError ? e.code : undefined;
+                  if (errorCode !== undefined) {
+                    await this.userRepository.updateFriendsAdded(
+                      userId,
+                      `err:${errorCode}`,
+                    );
+                  }
+                } catch (updateErr: any) {
+                  this.logger.warn(
+                    `Failed to update friends_added (error code) for user ${userId}: ${
+                      updateErr?.message || updateErr
+                    }`,
+                  );
+                }
+              }
 
               const result: UserFriendsResult = {
                 userId,
