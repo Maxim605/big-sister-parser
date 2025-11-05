@@ -7,8 +7,9 @@ import {
   IsIn,
   Min,
   IsNotEmpty,
+  IsBoolean,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Type, Transform } from "class-transformer";
 import settings from "src/settings";
 
 export class OrchestrateFriendsRequestDto {
@@ -71,4 +72,21 @@ export class OrchestrateFriendsRequestDto {
   @IsString()
   @IsNotEmpty()
   access_token: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Перезаписать данные даже если они уже сохранены (по умолчанию false)",
+    type: Boolean,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === "true" || value === true || value === 1 || value === "1")
+      return true;
+    if (value === "false" || value === false || value === 0 || value === "0")
+      return false;
+    return undefined;
+  })
+  rewrite?: boolean;
 }

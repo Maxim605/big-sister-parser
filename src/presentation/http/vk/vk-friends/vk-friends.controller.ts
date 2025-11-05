@@ -99,7 +99,10 @@ export class VkFriendsController {
   })
   async loadSync(@Query() params: VkFriendsGetParamsDto) {
     try {
-      const result = await this.loadVkFriends.execute(params as any);
+      const result = await this.loadVkFriends.execute({
+        ...params,
+        rewrite: params.rewrite,
+      } as any);
       return result;
     } catch (e: any) {
       if (e instanceof VkApiError) {

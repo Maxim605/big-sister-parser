@@ -35,6 +35,7 @@ export class OrchestrateFriendsUseCase {
       concurrency,
       mode,
       params: friendParams,
+      rewrite,
       onProgress,
     } = params;
 
@@ -57,6 +58,7 @@ export class OrchestrateFriendsUseCase {
         semaphore,
         userIds.length,
         globalCounters,
+        rewrite,
         (info) => {
           if (onProgress) {
             onProgress(info);
@@ -112,6 +114,7 @@ export class OrchestrateFriendsUseCase {
     semaphore: Semaphore,
     totalUsers: number,
     globalCounters: { processed: number; failed: number },
+    rewrite?: boolean,
     onProgress?: OrchestrateFriendsProgressCallback,
   ): Promise<{
     results: UserFriendsResult[];
@@ -133,6 +136,7 @@ export class OrchestrateFriendsUseCase {
             mode,
             friendParams,
             totalUsers,
+            rewrite,
             (info) => {
               if (onProgress) {
                 onProgress({
@@ -170,10 +174,38 @@ export class OrchestrateFriendsUseCase {
     mode: "fetch" | "load" | "get",
     friendParams: Partial<VkFriendsGetParams> | undefined,
     totalUsers: number,
+    rewrite?: boolean,
     onProgress?: OrchestrateFriendsProgressCallback,
   ): Promise<UserFriendsResult> {
     try {
-      const data = await this.executeUserOperation(userId, mode, friendParams);
+      const data = await this.executeUserOperation(
+        userId,
+        mode,
+        friendParams,
+        rewrite,
+      );
+
+      if (mode === "load" && (data as any)?.alreadySaved) {
+        const result: UserFriendsResult = {
+          userId,
+          success: true,
+          data: {
+            alreadySaved: true,
+            message: "Friends already saved",
+          },
+        };
+
+        if (onProgress) {
+          await onProgress({
+            processed: 0,
+            total: totalUsers,
+            currentUserId: userId,
+            success: true,
+          });
+        }
+
+        return result;
+      }
 
       if (mode !== "get") {
         await this.updateFriendsAddedOnSuccess(userId);
@@ -229,6 +261,7 @@ export class OrchestrateFriendsUseCase {
     userId: number,
     mode: "fetch" | "load" | "get",
     friendParams: Partial<VkFriendsGetParams> | undefined,
+    rewrite?: boolean,
   ): Promise<any> {
     switch (mode) {
       case "fetch":
@@ -240,7 +273,8 @@ export class OrchestrateFriendsUseCase {
         return await this.loadUseCase.execute({
           user_id: userId,
           ...friendParams,
-        } as VkFriendsGetParams);
+          rewrite,
+        } as VkFriendsGetParams & { rewrite?: boolean });
       case "get":
         return await this.getUseCase.execute(
           userId,

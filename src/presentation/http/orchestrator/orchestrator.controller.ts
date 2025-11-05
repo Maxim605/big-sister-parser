@@ -119,6 +119,7 @@ export class OrchestratorController {
           name_case: body.name_case,
           access_token: body.access_token,
         },
+        rewrite: body.rewrite,
       });
 
       return {
@@ -271,6 +272,12 @@ export class OrchestratorController {
   @ApiQuery({ name: "offset", type: Number, required: false })
   @ApiQuery({ name: "fields", type: [String], required: false })
   @ApiQuery({ name: "name_case", type: String, required: false })
+  @ApiQuery({
+    name: "rewrite",
+    type: Boolean,
+    required: false,
+    description: "Перезаписать данные даже если они уже сохранены",
+  })
   stream(
     @Query("user_ids") user_ids: string,
     @Query("batch_size") batch_size?: string,
@@ -280,6 +287,7 @@ export class OrchestratorController {
     @Query("offset") offset?: string,
     @Query("fields") fields?: string | string[],
     @Query("name_case") name_case?: string,
+    @Query("rewrite") rewrite?: string,
   ): Observable<MessageEvent> {
     const userIds = user_ids
       .split(",")
@@ -303,6 +311,8 @@ export class OrchestratorController {
         ? fields
         : undefined;
 
+    const rewriteBool = rewrite === "true" || rewrite === "1";
+
     return new Observable<MessageEvent>((subscriber) => {
       (async () => {
         try {
@@ -318,6 +328,7 @@ export class OrchestratorController {
               fields: fieldsArray,
               name_case: name_case as any,
             },
+            rewrite: rewriteBool,
             onProgress: async (info) => {
               subscriber.next({
                 data: {

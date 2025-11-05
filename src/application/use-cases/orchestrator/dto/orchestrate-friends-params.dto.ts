@@ -7,5 +7,6 @@ export interface OrchestrateFriendsParams {
   concurrency?: number;
   mode: "fetch" | "load" | "get";
   params?: Partial<VkFriendsGetParams>;
+  rewrite?: boolean;
   onProgress?: OrchestrateFriendsProgressCallback;
 }
