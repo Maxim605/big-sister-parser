@@ -144,4 +144,33 @@ export class ArangoFriendshipRepository implements IFriendshipRepository {
     `);
     return await cursorAll.all();
   }
+
+  async findFriendIdsMany(userIds: number[]): Promise<Map<number, number[]>> {
+    if (!userIds.length) return new Map();
+    const cursor = await this.db.query(aql`
+      FOR u IN ${this.db.collection(this.users)}
+        FILTER u.id IN ${userIds}
+        LET friendIds = (
+          FOR e IN ${this.db.collection(this.friendships)}
+            FILTER e._from == u._id
+            RETURN TO_NUMBER(SPLIT(e._to, '/')[1])
+        )
+        RETURN { userId: u.id, friendIds }
+    `);
+    const docs: any[] = await cursor.all();
+    const result = new Map<number, number[]>();
+
+    for (const doc of docs) {
+      result.set(doc.userId, doc.friendIds || []);
+    }
+
+    // Добавляем пустые списки для отсутствующих пользователей
+    for (const userId of userIds) {
+      if (!result.has(userId)) {
+        result.set(userId, []);
+      }
+    }
+
+    return result;
+  }
 }

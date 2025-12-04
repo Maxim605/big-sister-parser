@@ -17,14 +17,18 @@ import {
   ApiBody,
 } from "@nestjs/swagger";
 import { Observable } from "rxjs";
-import { API_V1, VK_TAG, GRAPH_TAG, FRIENDS_TAG } from "src/constants";
+import { API_V1, VK_TAG, GRAPH_TAG, FRIENDS_TAG, BFS_TAG } from "src/constants";
 import { OrchestrateFriendsUseCase } from "src/application/use-cases/orchestrator/orchestrate-friends.usecase";
 import {
   OrchestrateFriendsRequestDto,
   OrchestrateFriendsResponseDto,
+  LoadFriendsGraphRequestDto,
+  LoadFriendsGraphResponseDto,
 } from "./dto";
 import { VkApiError } from "src/infrastructure/vk/types";
 import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.service";
+import { LoadFriendsGraphUseCase } from "src/application/use-cases/orchestrator/load-friends-graph.usecase";
+import { LoadFriendsGraphParamsMapper } from "src/application/use-cases/orchestrator/mappers/load-friends-graph-params.mapper";
 
 interface OrchestrateStreamEvent {
   type: "progress" | "completed" | "error";
@@ -37,13 +41,15 @@ interface OrchestrateStreamEvent {
 }
 
 @ApiTags(`${VK_TAG}-${GRAPH_TAG}-${FRIENDS_TAG}`)
-@Controller(`${API_V1}/${VK_TAG}/${GRAPH_TAG}/${FRIENDS_TAG}`)
+@Controller(`${API_V1}/${VK_TAG}/${GRAPH_TAG}/${FRIENDS_TAG}/${BFS_TAG}`)
 export class OrchestratorController {
   private readonly logger = new Logger(OrchestratorController.name);
 
   constructor(
     private readonly orchestrateUseCase: OrchestrateFriendsUseCase,
     private readonly friendsJobService: VkFriendsJobService,
+    private readonly loadFriendsGraphUseCase: LoadFriendsGraphUseCase,
+    private readonly paramsMapper: LoadFriendsGraphParamsMapper,
   ) {}
 
   @Post("fetch")
@@ -366,6 +372,109 @@ export class OrchestratorController {
               type: "error",
               error: e?.message || String(e),
             } as OrchestrateStreamEvent,
+          } as MessageEvent);
+          subscriber.complete();
+        }
+      })();
+    });
+  }
+
+  @Get("load")
+  @ApiOperation({
+    summary: "Обход дружеской сети по уровням (BFS)",
+    description:
+      "Обходит граф друзей начиная с start_id до указанной глубины. Поддерживает три режима: sync (синхронный), async (асинхронный), stream (поточный SSE).",
+  })
+  @ApiOkResponse({
+    description: "Результат обхода графа (для sync/async режимов) или SSE поток (для stream режима)",
+    type: LoadFriendsGraphResponseDto,
+  })
+  async loadGraph(@Query() dto: LoadFriendsGraphRequestDto) {
+    try {
+      const params = this.paramsMapper.toUseCaseParams(dto);
+      const result = await this.loadFriendsGraphUseCase.execute(params);
+
+      if (dto.mode === "stream" && result instanceof Observable) {
+        return new Observable<MessageEvent>((subscriber) => {
+          result.subscribe({
+            next: (event) => {
+              subscriber.next({
+                data: event,
+              } as MessageEvent);
+            },
+            error: (err) => {
+              this.logger.error(`Stream error: ${err.message}`, err.stack);
+              subscriber.error(err);
+            },
+            complete: () => {
+              subscriber.complete();
+            },
+          });
+        });
+      }
+
+      return result;
+    } catch (e: any) {
+      if (e instanceof VkApiError) {
+        throw new BadRequestException({
+          error_code: e.code,
+          error_msg: e.msg,
+        });
+      }
+      throw e;
+    }
+  }
+
+  @Sse("load/graph/stream")
+  @ApiOperation({
+    summary: "Обход дружеской сети по уровням (stream режим через SSE)",
+    description:
+      "Открывает SSE поток для отслеживания прогресса обхода графа друзей в реальном времени",
+  })
+  streamGraph(@Query() dto: LoadFriendsGraphRequestDto): Observable<MessageEvent> {
+    const params = this.paramsMapper.toUseCaseParams({
+      ...dto,
+      mode: "stream",
+    });
+
+    return new Observable<MessageEvent>((subscriber) => {
+      (async () => {
+        try {
+          const result = await this.loadFriendsGraphUseCase.execute(params);
+          if (result instanceof Observable) {
+            result.subscribe({
+              next: (event) => {
+                subscriber.next({
+                  data: event,
+                } as MessageEvent);
+              },
+              error: (err) => {
+                this.logger.error(`Stream error: ${err.message}`, err.stack);
+                subscriber.next({
+                  data: {
+                    type: "error",
+                    error: err.message || String(err),
+                  },
+                } as MessageEvent);
+                subscriber.complete();
+              },
+              complete: () => {
+                subscriber.complete();
+              },
+            });
+          } else {
+            subscriber.next({
+              data: result,
+            } as MessageEvent);
+            subscriber.complete();
+          }
+        } catch (e: any) {
+          this.logger.error(`Stream execution failed: ${e.message}`, e.stack);
+          subscriber.next({
+            data: {
+              type: "error",
+              error: e?.message || String(e),
+            },
           } as MessageEvent);
           subscriber.complete();
         }

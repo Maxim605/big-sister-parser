@@ -132,4 +132,82 @@ export class ArangoUserRepository implements IUserRepository {
         REMOVE d IN ${this.db.collection(this.users)}
     `);
   }
+
+  async findFriendsStatusByIds(
+    ids: number[],
+  ): Promise<
+    Map<
+      number,
+      { status: "ok" | "error" | "unknown"; errorCode?: string; lastUpdated?: Date }
+    >
+  > {
+    if (!ids.length) return new Map();
+    const cursor = await this.db.query(aql`
+      FOR d IN ${this.db.collection(this.users)}
+        FILTER d.id IN ${ids}
+        RETURN { id: d.id, friends_added: d.friends_added }
+    `);
+    const docs: any[] = await cursor.all();
+    const result = new Map<
+      number,
+      { status: "ok" | "error" | "unknown"; errorCode?: string; lastUpdated?: Date }
+    >();
+
+    for (const doc of docs) {
+      const friendsAdded = doc.friends_added;
+      let status: "ok" | "error" | "unknown" = "unknown";
+      let errorCode: string | undefined;
+      let lastUpdated: Date | undefined;
+
+      if (friendsAdded !== undefined && friendsAdded !== null) {
+        if (typeof friendsAdded === "string" && friendsAdded.startsWith("err:")) {
+          status = "error";
+          errorCode = friendsAdded.substring(4);
+        } else {
+          status = "ok";
+          lastUpdated =
+            typeof friendsAdded === "string"
+              ? new Date(friendsAdded)
+              : typeof friendsAdded === "number"
+              ? new Date(friendsAdded * 1000)
+              : friendsAdded instanceof Date
+              ? friendsAdded
+              : undefined;
+        }
+      }
+
+      result.set(doc.id, { status, errorCode, lastUpdated });
+    }
+
+    // Добавляем unknown для отсутствующих пользователей
+    for (const id of ids) {
+      if (!result.has(id)) {
+        result.set(id, { status: "unknown" });
+      }
+    }
+
+    return result;
+  }
+
+  async updateFriendsAddedMany(
+    updates: Array<{ userId: number; value: Date | number | string }>,
+  ): Promise<void> {
+    if (!updates.length) return;
+
+    for (const { userId, value } of updates) {
+      const valueToSave =
+        value instanceof Date
+          ? value.toISOString()
+          : typeof value === "string"
+          ? value
+          : value;
+      await this.db.query(aql`
+        FOR u IN ${this.db.collection(this.users)}
+          FILTER u._key == ${String(userId)}
+          UPDATE u WITH { friends_added: ${valueToSave} } IN ${this.db.collection(
+        this.users,
+      )}
+      `);
+    }
+  }
 }
