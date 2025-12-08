@@ -16,7 +16,7 @@ db:
 
 arango:
   url: "http://host.docker.internal:8529"
-  database: "big-sister-parser"
+  database: "bs"
   username: "root"
   password: "test"
 

@@ -449,7 +449,7 @@ export class LoadFriendsGraphUseCase {
         let attempt = 0;
         let success = false;
         const allFriendIds: number[] = [];
-        const allUsersToUpsert: VkUser[] = [];
+        const allUsersToUpsert: Array<VkUser & Record<string, any>> = [];
 
         while (attempt <= maxRetries && !success) {
           try {
@@ -484,23 +484,39 @@ export class LoadFriendsGraphUseCase {
               }
 
               const friendIds: number[] = [];
-              const usersToUpsert: VkUser[] = [];
+              const usersToUpsert: Array<VkUser & Record<string, any>> = [];
 
               if (Array.isArray(response.items)) {
                 for (const item of response.items) {
                   if (typeof item === "number") {
                     friendIds.push(item);
-                    usersToUpsert.push(new VkUser(item, "", ""));
+                    usersToUpsert.push(new VkUser(item, "", "") as VkUser & Record<string, any>);
                   } else if (item && typeof item === "object" && "id" in item) {
                     friendIds.push(item.id);
-                    usersToUpsert.push(
-                      new VkUser(
-                        item.id,
-                        item.first_name || "",
-                        item.last_name || "",
-                        (item as any).domain,
-                      ),
-                    );
+                    const user = new VkUser(
+                      item.id,
+                      item.first_name || "",
+                      item.last_name || "",
+                      (item as any).domain,
+                    ) as VkUser & Record<string, any>;
+                    
+                    // Сохраняем все дополнительные поля из ответа API
+                    for (const key in item) {
+                      if (
+                        key !== "id" &&
+                        key !== "first_name" &&
+                        key !== "last_name" &&
+                        key !== "domain" &&
+                        item.hasOwnProperty(key)
+                      ) {
+                        const value = (item as any)[key];
+                        if (value !== undefined) {
+                          user[key] = value;
+                        }
+                      }
+                    }
+                    
+                    usersToUpsert.push(user);
                   }
                 }
               }
@@ -820,7 +836,7 @@ export class LoadFriendsGraphUseCase {
         let attempt = 0;
         let success = false;
         const allFriendIds: number[] = [];
-        const allUsersToUpsert: VkUser[] = [];
+        const allUsersToUpsert: Array<VkUser & Record<string, any>> = [];
 
         while (attempt <= maxRetries && !success) {
           try {
@@ -855,23 +871,39 @@ export class LoadFriendsGraphUseCase {
               }
 
               const friendIds: number[] = [];
-              const usersToUpsert: VkUser[] = [];
+              const usersToUpsert: Array<VkUser & Record<string, any>> = [];
 
               if (Array.isArray(response.items)) {
                 for (const item of response.items) {
                   if (typeof item === "number") {
                     friendIds.push(item);
-                    usersToUpsert.push(new VkUser(item, "", ""));
+                    usersToUpsert.push(new VkUser(item, "", "") as VkUser & Record<string, any>);
                   } else if (item && typeof item === "object" && "id" in item) {
                     friendIds.push(item.id);
-                    usersToUpsert.push(
-                      new VkUser(
-                        item.id,
-                        item.first_name || "",
-                        item.last_name || "",
-                        (item as any).domain,
-                      ),
-                    );
+                    const user = new VkUser(
+                      item.id,
+                      item.first_name || "",
+                      item.last_name || "",
+                      (item as any).domain,
+                    ) as VkUser & Record<string, any>;
+                    
+                    // Сохраняем все дополнительные поля из ответа API
+                    for (const key in item) {
+                      if (
+                        key !== "id" &&
+                        key !== "first_name" &&
+                        key !== "last_name" &&
+                        key !== "domain" &&
+                        item.hasOwnProperty(key)
+                      ) {
+                        const value = (item as any)[key];
+                        if (value !== undefined) {
+                          user[key] = value;
+                        }
+                      }
+                    }
+                    
+                    usersToUpsert.push(user);
                   }
                 }
               }

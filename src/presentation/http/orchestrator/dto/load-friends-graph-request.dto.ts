@@ -180,7 +180,6 @@ export class LoadFriendsGraphRequestDto {
     type: String,
   })
   @IsOptional()
-  @IsString()
   @Transform(({ value }) => {
     if (typeof value === "string") {
       return value.split(",").map((f) => f.trim()).filter((f) => f.length > 0);
@@ -190,6 +189,8 @@ export class LoadFriendsGraphRequestDto {
     }
     return undefined;
   })
+  @IsArray()
+  @IsString({ each: true })
   fields?: string[];
 
   @ApiPropertyOptional({

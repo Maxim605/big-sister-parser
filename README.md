@@ -39,8 +39,8 @@ npm run build && npm run start:prod
 Для одновременного запуска базы данных и бэкенда выполните:
 
 ```bash
-docker run -d -e ARANGO_ROOT_PASSWORD="test" -p 8529:8529 arangodb/arangodb-preview:devel-nightly
-docker run -d --name redis -p 6379:6379 redis:7
+docker run -d --name arangodb --memory=150g --memory-swap=150g -e ARANGO_ROOT_PASSWORD="test" -e ARANGODB_OVERRIDE_DETECTED_TOTAL_MEMORY=245G -v arangodb-data:/var/lib/arangodb3 -p 8529:8529 arangodb/arangodb-preview:devel-nightly
+docker run -d --name redis --memory=6g --memory-swap=6g -p 6379:6379 redis:7
 docker build --no-cache --progress=plain -t bs-parser .
 docker run --rm -p 3002:3002 --name bs-parser `
     -v "$(pwd)/settings.prod.yml:/app/settings.yml:ro" `
@@ -109,7 +109,7 @@ db:
 
 arango:
   url: "http://host.docker.internal:8529"
-  database: "big-sister-parser"
+  database: "bs"
   username: "root"
   password: "test"
 

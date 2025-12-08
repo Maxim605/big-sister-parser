@@ -85,23 +85,51 @@ export class ArangoUserRepository implements IUserRepository {
     `);
   }
 
-  async saveMany(users: VkUser[]): Promise<void> {
+  async saveMany(users: VkUser[] | Array<VkUser & Record<string, any>>): Promise<void> {
     if (!users?.length) return;
-    const payload = users.map((u) => ({
-      id: u.id,
-      first_name: u.first_name,
-      last_name: u.last_name,
-      domain: u.domain ?? null,
-      friends_added:
-        u.friends_added instanceof Date
-          ? u.friends_added.toISOString()
-          : u.friends_added ?? null,
-    }));
+    const payload = users.map((u) => {
+      const baseFields = {
+        id: u.id,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        domain: u.domain ?? null,
+        friends_added:
+          u.friends_added instanceof Date
+            ? u.friends_added.toISOString()
+            : u.friends_added ?? null,
+      };
+      
+      // Сохраняем все дополнительные поля из объекта (кроме служебных)
+      const additionalFields: Record<string, any> = {};
+      for (const key in u) {
+        if (
+          key !== "id" &&
+          key !== "first_name" &&
+          key !== "last_name" &&
+          key !== "domain" &&
+          key !== "friends_added" &&
+          u.hasOwnProperty(key)
+        ) {
+          const value = (u as any)[key];
+          // Пропускаем функции и undefined
+          if (value !== undefined && typeof value !== "function") {
+            // Сериализуем объекты и массивы
+            if (value !== null && typeof value === "object") {
+              additionalFields[key] = value;
+            } else {
+              additionalFields[key] = value;
+            }
+          }
+        }
+      }
+      
+      return { ...baseFields, ...additionalFields };
+    });
     await this.db.query(aql`
       FOR u IN ${payload}
         UPSERT { _key: TO_STRING(u.id) }
-          INSERT { _key: TO_STRING(u.id), id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain, friends_added: u.friends_added }
-          UPDATE { id: u.id, first_name: u.first_name, last_name: u.last_name, domain: u.domain, friends_added: u.friends_added }
+          INSERT MERGE({ _key: TO_STRING(u.id) }, u)
+          UPDATE MERGE(u, { _key: TO_STRING(u.id) })
           IN ${this.db.collection(this.users)}
     `);
   }
