@@ -31,10 +31,10 @@ COPY --from=builder /app/settings.yml ./settings.yml
 
 RUN npm prune --production --no-audit --no-fund || true
 
-EXPOSE 3000
+EXPOSE 3002
 CMD ["node", "dist/main.js"]
 
 # docker build -t bs-parser .
-# docker run -p 3000:3000 --name bs-parser `
+# docker run -p 3002:3002 --name bs-parser `
 #    -v "$(pwd)/settings.yml:/app/settings.yml:ro" `
 #    bs-parser

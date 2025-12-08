@@ -364,7 +364,7 @@ services:
       - ARANGO_URL=http://arango:8529
       - POSTGRES_URL=postgres://postgres:secret@postgres:5432/postgres
       - REDIS_URL=redis://redis:6379
-    ports: ["3000:3000"]
+    ports: ["3002:3002"]
     depends_on:
       - arango
       - postgres

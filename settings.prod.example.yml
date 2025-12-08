@@ -3,7 +3,7 @@ debug: false
 envSecret: "prod-insecure-secret-key-32bytes!"
 
 basePath: "big-sister-parser"
-host: "http://localhost:3000/"
+host: "http://localhost:3002/"
 enableThrift: true
 
 db:
