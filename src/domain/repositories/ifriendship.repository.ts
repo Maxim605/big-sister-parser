@@ -8,4 +8,8 @@ export interface IFriendshipRepository {
     limit?: number,
     offset?: number,
   ): Promise<number[]>;
+  /**
+   * Получить списки друзей для нескольких пользователей (bulk операция)
+   */
+  findFriendIdsMany(userIds: number[]): Promise<Map<number, number[]>>;
 }

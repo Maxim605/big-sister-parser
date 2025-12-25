@@ -13,6 +13,7 @@ import { Arango } from "./arango";
 import { Redis } from "./redis";
 import { VkWallSettings } from "./vk-wall";
 import { Token } from "./token";
+import { OrchestratorSettings } from "./orchestrator";
 
 /**
  * Глобальные настройки приложения.
@@ -67,6 +68,12 @@ export class Settings {
   @ValidateNested()
   @Type(() => VkWallSettings)
   public vkWall: VkWallSettings = new VkWallSettings();
+
+  // Конфигурация модуля оркестратора
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => OrchestratorSettings)
+  public orchestrator: OrchestratorSettings = new OrchestratorSettings();
 
   @IsOptional()
   @IsBoolean()

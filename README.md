@@ -2,7 +2,7 @@
 
 **Технологии:** NestJS + gRPC
 
-Документация API: [http://localhost:3000/api/v1](http://localhost:3000/api/v1)
+Документация API: [http://localhost:3002/api/v1](http://localhost:3002/api/v1)
 
 ---
 
@@ -39,10 +39,10 @@ npm run build && npm run start:prod
 Для одновременного запуска базы данных и бэкенда выполните:
 
 ```bash
-docker run -d -e ARANGO_ROOT_PASSWORD="test" -p 8529:8529 arangodb/arangodb-preview:devel-nightly
-docker run -d --name redis -p 6379:6379 redis:7
+docker run -d --name arangodb --memory=150g --memory-swap=150g -e ARANGO_ROOT_PASSWORD="test" -e ARANGODB_OVERRIDE_DETECTED_TOTAL_MEMORY=245G -v arangodb-data:/var/lib/arangodb3 -p 8529:8529 arangodb/arangodb-preview:devel-nightly
+docker run -d --name redis --memory=6g --memory-swap=6g -p 6379:6379 redis:7
 docker build --no-cache --progress=plain -t bs-parser .
-docker run --rm -p 3000:3000 --name bs-parser `
+docker run --rm -p 3002:3002 --name bs-parser `
     -v "$(pwd)/settings.prod.yml:/app/settings.yml:ro" `
     bs-parser
 ```
@@ -57,7 +57,7 @@ envSecret: "dev-insecure-secret-key-32bytes!"
 
 enableThrift: false
 basePath: "big-sister-parser"
-host: "http://localhost:3000/"
+host: "http://localhost:3002/"
 
 db:
   debug: true
@@ -96,7 +96,7 @@ debug: false
 envSecret: "prod-insecure-secret-key-32bytes!"
 
 basePath: "big-sister-parser"
-host: "http://localhost:3000/"
+host: "http://localhost:3002/"
 enableThrift: true
 
 db:
@@ -109,7 +109,7 @@ db:
 
 arango:
   url: "http://host.docker.internal:8529"
-  database: "big-sister-parser"
+  database: "bs"
   username: "root"
   password: "test"
 

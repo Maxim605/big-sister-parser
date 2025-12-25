@@ -1,74 +1,76 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsNumber, IsOptional, IsString, IsArray, IsIn } from "class-validator";
-import { Transform, Type } from "class-transformer";
+import {
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsIn,
+  Min,
+  IsNotEmpty,
+  IsBoolean,
+} from "class-validator";
+import { Type, Transform } from "class-transformer";
 import settings from "src/settings";
 
-export class VkFriendsGetParamsDto {
+export class OrchestrateFriendsRequestDto {
   @ApiProperty({
-    description: "ID пользователя VK",
-    example: 508133099,
-    type: Number,
+    description: "Список ID пользователей VK для обработки",
+    type: [Number],
+    example: [508133099, 123456789],
   })
-  @IsNumber()
+  @IsArray()
+  @IsNumber({}, { each: true })
   @Type(() => Number)
-  user_id: number;
-
-  @ApiProperty({
-    description: "Порядок сортировки друзей",
-    enum: ["name", "hints"],
-    required: false,
-  })
-  @IsOptional()
-  @IsIn(["name", "hints"])
-  order?: "name" | "hints";
+  user_ids: number[];
 
   @ApiPropertyOptional({
-    description: "Количество друзей для возврата",
+    description: "Размер батча для обработки",
     type: Number,
+    minimum: 1,
   })
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
+  @Min(1)
+  batch_size?: number;
+
+  @ApiPropertyOptional({
+    description: "Количество параллельных запросов",
+    type: Number,
+    minimum: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  concurrency?: number;
+
+  @ApiPropertyOptional({
+    description: "Дополнительные параметры для запроса друзей",
+  })
+  @IsOptional()
   count?: number;
 
-  @ApiPropertyOptional({
-    description: "Смещение от начала списка",
-    type: Number,
-  })
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
   offset?: number;
 
-  @ApiProperty({
-    description: "Дополнительные поля для возврата",
-    required: false,
-    example: ["city", "bdate", "sex"],
-    type: [String],
-  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @Transform(({ value }) =>
-    typeof value === "string" ? value.split(",") : value,
-  )
   fields?: string[];
 
-  @ApiProperty({
-    description: "Падеж для склонения имени",
-    enum: ["nom", "gen", "dat", "acc", "ins", "abl"],
-    required: false,
-    example: "nom",
-  })
   @IsOptional()
   @IsIn(["nom", "gen", "dat", "acc", "ins", "abl"])
   name_case?: "nom" | "gen" | "dat" | "acc" | "ins" | "abl";
 
   @ApiProperty({
-    description: "access_token",
+    description: "VK API access_token (обязателен для режимов fetch и load)",
     example: settings.token.vkDefault,
   })
   @IsString()
+  @IsNotEmpty()
   access_token: string;
 
   @ApiPropertyOptional({
@@ -78,6 +80,7 @@ export class VkFriendsGetParamsDto {
     default: false,
   })
   @IsOptional()
+  @IsBoolean()
   @Transform(({ value }) => {
     if (value === "true" || value === true || value === 1 || value === "1")
       return true;

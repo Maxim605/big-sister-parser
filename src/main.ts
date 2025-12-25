@@ -62,7 +62,7 @@ async function bootstrap() {
   // Luxon настройка дефолтного часового пояса
   setupDateTime();
 
-  const port = process.env.NODE_PORT || 3000;
+  const port = process.env.NODE_PORT || 3002;
   await app.listen(port).then(() => {
     console.log(`App started. Port: ${port}`);
   });

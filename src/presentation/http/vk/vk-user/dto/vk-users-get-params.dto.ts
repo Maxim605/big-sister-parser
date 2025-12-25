@@ -43,9 +43,9 @@ export class VkUsersGetParamsDto {
   @IsIn(["nom", "gen", "dat", "acc", "ins", "abl"])
   name_case?: "nom" | "gen" | "dat" | "acc" | "ins" | "abl";
 
-  @ApiProperty({ 
-    description: "access_token", 
-    example: settings.token.vkDefault
+  @ApiProperty({
+    description: "access_token",
+    example: settings.token.vkDefault,
   })
   @IsString()
   access_token: string;
@@ -61,9 +61,9 @@ export class VkUsersGetSubscriptionsParamsDto {
   @Type(() => Number)
   user_id: number;
 
-  @ApiProperty({ 
-    description: "access_token", 
-    example: settings.token.vkDefault 
+  @ApiProperty({
+    description: "access_token",
+    example: settings.token.vkDefault,
   })
   @IsString()
   access_token: string;

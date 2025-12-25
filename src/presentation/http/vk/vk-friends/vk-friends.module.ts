@@ -38,6 +38,7 @@ import { TOKENS } from "src/common/tokens";
   controllers: [VkFriendsController],
   exports: [
     VkApiService,
+    "IVkApiClient",
     LoadVkFriendsUseCase,
     GetVkFriendsUseCase,
     FetchVkFriendsUseCase,
