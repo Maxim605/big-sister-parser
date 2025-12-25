@@ -47,6 +47,8 @@ docker run --rm -p 3002:3002 --name bs-parser `
     bs-parser
 ```
 
+### Примечание - для загрузки debian bookworm может потребоваться VPN
+
 ---
 
 ## Пример конфига (settings.yml)
