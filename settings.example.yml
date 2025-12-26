@@ -16,7 +16,7 @@ db:
 
 arango: {
   url: 'http://localhost:8529',  
-  database: 'bs',
+  database: '_system',
   username: 'root',
   password: 'test',
 }
