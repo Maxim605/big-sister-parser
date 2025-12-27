@@ -1,11 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { LoadFriendsGraphStatsDto } from "./load-friends-graph-stats.dto";
+import settings from "src/settings";
 
 export class JobCompleteEventDto {
   @ApiProperty({
     description: "ID задачи",
     type: String,
-    example: "graph:1234567890:508133099",
+    example: `graph:1234567890:${settings.vkApi.defaultStartId}`,
   })
   job_id: string;
 

@@ -13,7 +13,7 @@ import settings from "src/settings";
 export class VkUsersGetParamsDto {
   @ApiProperty({
     description: "ID пользователя VK",
-    example: 508133099,
+    example: settings.vkApi.defaultStartId,
     type: Number,
   })
   @IsNumber()
@@ -54,7 +54,7 @@ export class VkUsersGetParamsDto {
 export class VkUsersGetSubscriptionsParamsDto {
   @ApiProperty({
     description: "ID пользователя VK",
-    example: 508133099,
+    example: settings.vkApi.defaultStartId,
     type: Number,
   })
   @IsNumber()

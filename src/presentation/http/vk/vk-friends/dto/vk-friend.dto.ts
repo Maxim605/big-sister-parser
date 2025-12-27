@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import settings from "src/settings";
 
 export class VkFriendDto {
-  @ApiProperty({ description: "ID пользователя VK", example: 508133099 })
+  @ApiProperty({ description: "ID пользователя VK", example: settings.vkApi.defaultStartId })
   id: number;
 
   @ApiProperty({ description: "Имя пользователя", example: "Иван" })

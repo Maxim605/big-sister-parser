@@ -1,11 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { LoadFriendsGraphStatsDto } from "./load-friends-graph-stats.dto";
+import settings from "src/settings";
 
 export class LoadFriendsGraphResponseDto {
   @ApiProperty({
     description: "ID задачи",
     type: String,
-    example: "graph:1234567890:508133099",
+    example: `graph:1234567890:${settings.vkApi.defaultStartId}`,
   })
   job_id: string;
 
@@ -32,7 +33,7 @@ export class LoadFriendsGraphResponseDto {
   @ApiProperty({
     description: "Список ID посещённых пользователей",
     type: [Number],
-    example: [508133099, 123456789, 987654321],
+    example: [settings.vkApi.defaultStartId, 123456789, 987654321],
   })
   visited_ids: number[];
 }

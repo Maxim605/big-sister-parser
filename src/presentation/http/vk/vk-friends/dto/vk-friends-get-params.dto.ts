@@ -6,7 +6,7 @@ import settings from "src/settings";
 export class VkFriendsGetParamsDto {
   @ApiProperty({
     description: "ID пользователя VK",
-    example: 508133099,
+    example: settings.vkApi.defaultStartId,
     type: Number,
   })
   @IsNumber()

@@ -1,11 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { IsNumber, IsOptional } from "class-validator";
 import { Type } from "class-transformer";
+import settings from "src/settings";
 
 export class VkUsersGetSubscriptionsDbParamsDto {
   @ApiProperty({
     description: "ID пользователя VK",
-    example: 508133099,
+    example: settings.vkApi.defaultStartId,
     type: Number,
   })
   @IsNumber()

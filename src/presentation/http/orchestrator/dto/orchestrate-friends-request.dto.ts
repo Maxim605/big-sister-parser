@@ -16,7 +16,7 @@ export class OrchestrateFriendsRequestDto {
   @ApiProperty({
     description: "Список ID пользователей VK для обработки",
     type: [Number],
-    example: [508133099, 123456789],
+    example: [settings.vkApi.defaultStartId, 123456789],
   })
   @IsArray()
   @IsNumber({}, { each: true })

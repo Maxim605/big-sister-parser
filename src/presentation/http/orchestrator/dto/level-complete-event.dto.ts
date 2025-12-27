@@ -1,10 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
+import settings from "src/settings";
 
 export class LevelCompleteEventDto {
   @ApiProperty({
     description: "ID задачи",
     type: String,
-    example: "graph:1234567890:508133099",
+    example: `graph:1234567890:${settings.vkApi.defaultStartId}`,
   })
   job_id: string;
 

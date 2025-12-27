@@ -29,6 +29,7 @@ import { VkApiError } from "src/infrastructure/vk/types";
 import { VkFriendsJobService } from "src/infrastructure/jobs/vk-friends.job.service";
 import { LoadFriendsGraphUseCase } from "src/application/use-cases/orchestrator/load-friends-graph.usecase";
 import { LoadFriendsGraphParamsMapper } from "src/application/use-cases/orchestrator/mappers/load-friends-graph-params.mapper";
+import settings from "src/settings";
 
 interface OrchestrateStreamEvent {
   type: "progress" | "completed" | "error";
@@ -202,7 +203,7 @@ export class OrchestratorController {
     type: String,
     required: true,
     description: "Список ID пользователей через запятую",
-    example: "508133099,123456789",
+    example: `${settings.vkApi.defaultStartId},123456789`,
   })
   @ApiQuery({ name: "batch_size", type: Number, required: false })
   @ApiQuery({ name: "concurrency", type: Number, required: false })
@@ -264,7 +265,7 @@ export class OrchestratorController {
     type: String,
     required: true,
     description: "Список ID пользователей через запятую",
-    example: "508133099,123456789",
+    example: `${settings.vkApi.defaultStartId},123456789`,
   })
   @ApiQuery({ name: "batch_size", type: Number, required: false })
   @ApiQuery({ name: "concurrency", type: Number, required: false })

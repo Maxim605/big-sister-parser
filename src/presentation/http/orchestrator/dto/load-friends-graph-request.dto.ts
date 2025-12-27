@@ -15,7 +15,7 @@ import settings from "src/settings";
 export class LoadFriendsGraphRequestDto {
   @ApiProperty({
     description: "Идентификатор стартового пользователя",
-    example: 508133099,
+    example: settings.vkApi.defaultStartId,
     type: Number,
   })
   @IsNumber()

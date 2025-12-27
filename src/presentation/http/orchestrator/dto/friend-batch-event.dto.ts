@@ -1,10 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import settings from "src/settings";
 
 export class FriendBatchEventDto {
   @ApiProperty({
     description: "ID задачи",
     type: String,
-    example: "graph:1234567890:508133099",
+    example: `graph:1234567890:${settings.vkApi.defaultStartId}`,
   })
   job_id: string;
 
@@ -18,7 +19,7 @@ export class FriendBatchEventDto {
   @ApiProperty({
     description: "ID исходного пользователя",
     type: Number,
-    example: 508133099,
+    example: settings.vkApi.defaultStartId,
   })
   source_id: number;
 

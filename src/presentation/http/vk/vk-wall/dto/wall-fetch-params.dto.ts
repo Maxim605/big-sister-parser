@@ -6,7 +6,7 @@ import settings from "src/settings";
 export class WallfetchParamsDto {
   @ApiPropertyOptional({
     description: "owner_id (отрицательный для групп)",
-    example: "508133099",
+    example: settings.vkApi.defaultStartId,
   })
   @Type(() => Number)
   @IsOptional()
