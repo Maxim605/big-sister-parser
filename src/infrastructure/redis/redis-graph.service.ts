@@ -20,7 +20,11 @@ export class RedisGraphService {
   /**
    * Добавить ID в visited set, возвращает true если элемент был добавлен (новый)
    */
-  async addVisited(jobId: string, userId: number, ttl: number): Promise<boolean> {
+  async addVisited(
+    jobId: string,
+    userId: number,
+    ttl: number,
+  ): Promise<boolean> {
     const key = `visited:${jobId}`;
     const result = await this.redis.sadd(key, String(userId));
     if (result === 1) {
@@ -178,14 +182,22 @@ export class RedisGraphService {
     ttl: number,
   ): Promise<void> {
     const key = `job:progress:${jobId}`;
-    await this.redis.hset(key, "level", String(level), "batch_index", String(batchIndex));
+    await this.redis.hset(
+      key,
+      "level",
+      String(level),
+      "batch_index",
+      String(batchIndex),
+    );
     await this.redis.expire(key, ttl);
   }
 
   /**
    * Получить прогресс джоба
    */
-  async getProgress(jobId: string): Promise<{ level: number; batchIndex: number } | null> {
+  async getProgress(
+    jobId: string,
+  ): Promise<{ level: number; batchIndex: number } | null> {
     const key = `job:progress:${jobId}`;
     const data = await this.redis.hgetall(key);
     if (!data.level) return null;
@@ -207,4 +219,3 @@ export class RedisGraphService {
     }
   }
 }
-

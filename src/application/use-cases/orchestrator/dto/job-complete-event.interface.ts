@@ -6,4 +6,3 @@ export interface JobCompleteEvent {
   levels_processed: number;
   stats: LoadFriendsGraphStats;
 }
-

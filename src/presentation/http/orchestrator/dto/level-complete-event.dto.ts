@@ -30,4 +30,3 @@ export class LevelCompleteEventDto {
   })
   visited_count: number;
 }
-

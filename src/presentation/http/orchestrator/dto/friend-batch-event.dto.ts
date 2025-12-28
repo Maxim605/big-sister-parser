@@ -51,4 +51,3 @@ export class FriendBatchEventDto {
   })
   error_code?: string;
 }
-

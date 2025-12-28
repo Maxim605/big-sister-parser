@@ -35,7 +35,8 @@ export class LoadFriendsGraphRequestDto {
   max_depth?: number | null;
 
   @ApiPropertyOptional({
-    description: "Если true, игнорировать локальную БД и получать данные из API",
+    description:
+      "Если true, игнорировать локальную БД и получать данные из API",
     example: false,
     type: Boolean,
   })
@@ -51,7 +52,8 @@ export class LoadFriendsGraphRequestDto {
   rewrite?: boolean;
 
   @ApiProperty({
-    description: "Режим работы: sync (синхронный), async (асинхронный), stream (поточный)",
+    description:
+      "Режим работы: sync (синхронный), async (асинхронный), stream (поточный)",
     enum: ["sync", "async", "stream"],
     example: "sync",
   })
@@ -96,7 +98,8 @@ export class LoadFriendsGraphRequestDto {
   api_concurrency?: number;
 
   @ApiPropertyOptional({
-    description: "Количество воркеров для async/stream режимов (по умолчанию 8)",
+    description:
+      "Количество воркеров для async/stream режимов (по умолчанию 8)",
     example: 8,
     type: Number,
     minimum: 1,
@@ -182,7 +185,10 @@ export class LoadFriendsGraphRequestDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (typeof value === "string") {
-      return value.split(",").map((f) => f.trim()).filter((f) => f.length > 0);
+      return value
+        .split(",")
+        .map((f) => f.trim())
+        .filter((f) => f.length > 0);
     }
     if (Array.isArray(value)) {
       return value;
@@ -202,4 +208,3 @@ export class LoadFriendsGraphRequestDto {
   @IsIn(["nom", "gen", "dat", "acc", "ins", "abl"])
   name_case?: "nom" | "gen" | "dat" | "acc" | "ins" | "abl";
 }
-

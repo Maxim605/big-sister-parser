@@ -7,4 +7,3 @@ export interface FriendBatchEvent {
   status: "ok" | "partial" | "error";
   error_code?: string;
 }
-

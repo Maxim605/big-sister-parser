@@ -36,4 +36,3 @@ export class LoadFriendsGraphStatsDto {
   })
   db_writes: number;
 }
-

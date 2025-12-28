@@ -387,7 +387,8 @@ export class OrchestratorController {
       "Обходит граф друзей начиная с start_id до указанной глубины. Поддерживает три режима: sync (синхронный), async (асинхронный), stream (поточный SSE).",
   })
   @ApiOkResponse({
-    description: "Результат обхода графа (для sync/async режимов) или SSE поток (для stream режима)",
+    description:
+      "Результат обхода графа (для sync/async режимов) или SSE поток (для stream режима)",
     type: LoadFriendsGraphResponseDto,
   })
   async loadGraph(@Query() dto: LoadFriendsGraphRequestDto) {
@@ -432,7 +433,9 @@ export class OrchestratorController {
     description:
       "Открывает SSE поток для отслеживания прогресса обхода графа друзей в реальном времени",
   })
-  streamGraph(@Query() dto: LoadFriendsGraphRequestDto): Observable<MessageEvent> {
+  streamGraph(
+    @Query() dto: LoadFriendsGraphRequestDto,
+  ): Observable<MessageEvent> {
     const params = this.paramsMapper.toUseCaseParams({
       ...dto,
       mode: "stream",

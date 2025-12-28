@@ -16,4 +16,3 @@ export interface LoadFriendsGraphParams {
   fields?: string[];
   name_case?: string;
 }
-

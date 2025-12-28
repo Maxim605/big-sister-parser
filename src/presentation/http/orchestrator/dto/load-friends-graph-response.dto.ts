@@ -37,4 +37,3 @@ export class LoadFriendsGraphResponseDto {
   })
   visited_ids: number[];
 }
-

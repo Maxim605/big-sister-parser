@@ -4,4 +4,3 @@ export interface LevelCompleteEvent {
   frontier_size: number;
   visited_count: number;
 }
-

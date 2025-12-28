@@ -132,7 +132,9 @@ export class ArangoFriendshipRepository implements IFriendshipRepository {
       );
     } catch (error: any) {
       this.logger.error(
-        `replaceForUser failed for userId=${userId}: ${error?.message || error}`,
+        `replaceForUser failed for userId=${userId}: ${
+          error?.message || error
+        }`,
         error?.stack,
       );
       throw error;

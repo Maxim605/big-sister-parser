@@ -21,7 +21,8 @@ export class LoadFriendsGraphUseCase {
 
   constructor(
     @Inject("IVkApiClient") private readonly api: IVkApiClient,
-    @Inject(TOKENS.IUserRepository) private readonly userRepository: IUserRepository,
+    @Inject(TOKENS.IUserRepository)
+    private readonly userRepository: IUserRepository,
     @Inject(TOKENS.IFriendshipRepository)
     private readonly friendshipRepository: IFriendshipRepository,
     private readonly redisGraph: RedisGraphService,
@@ -50,7 +51,8 @@ export class LoadFriendsGraphUseCase {
     } = params;
 
     const jobId = `${redis_namespace}:${Date.now()}:${start_id}`;
-    const effectiveMaxDepth = max_depth === null || max_depth === undefined ? 1 : max_depth;
+    const effectiveMaxDepth =
+      max_depth === null || max_depth === undefined ? 1 : max_depth;
 
     if (mode === "stream") {
       const subject = new Subject<GraphEvent>();
@@ -106,7 +108,9 @@ export class LoadFriendsGraphUseCase {
     try {
       const existing = await this.userRepository.findById(userId);
       if (!existing) {
-        this.logger.log(`Root user ${userId} not found in DB, creating placeholder`);
+        this.logger.log(
+          `Root user ${userId} not found in DB, creating placeholder`,
+        );
         await this.userRepository.save(new VkUser(userId, "", ""));
       }
     } catch (e) {
@@ -135,14 +139,20 @@ export class LoadFriendsGraphUseCase {
     await this.ensureRootUser(startId);
     await this.redisGraph.addVisited(jobId, startId, jobTtl);
     await this.redisGraph.addToFrontier(jobId, 1, startId, jobTtl);
-    await this.redisGraph.updateStats(jobId, { level_processed: 0, visited_count: 1 }, jobTtl);
+    await this.redisGraph.updateStats(
+      jobId,
+      { level_processed: 0, visited_count: 1 },
+      jobTtl,
+    );
 
     let currentLevel = 1;
     const visitedIds: number[] = [startId];
 
     while (currentLevel <= maxDepth) {
       const levelStartTime = Date.now();
-      this.logger.log(`Processing level ${currentLevel}/${maxDepth} for job ${jobId}`);
+      this.logger.log(
+        `Processing level ${currentLevel}/${maxDepth} for job ${jobId}`,
+      );
 
       const frontier = await this.redisGraph.getFrontier(jobId, currentLevel);
       if (frontier.length === 0) {
@@ -150,7 +160,9 @@ export class LoadFriendsGraphUseCase {
         break;
       }
 
-      this.logger.log(`Frontier size at level ${currentLevel}: ${frontier.length}`);
+      this.logger.log(
+        `Frontier size at level ${currentLevel}: ${frontier.length}`,
+      );
 
       // Сохраняем прогресс перед обработкой уровня
       await this.redisGraph.saveProgress(jobId, currentLevel, 0, jobTtl);
@@ -199,11 +211,17 @@ export class LoadFriendsGraphUseCase {
 
       // Собрать кандидатов из друзей обработанных узлов
       // Получаем друзей из БД (для всех узлов, включая haveLocal и только что загруженные)
-      const processedUsers = await this.friendshipRepository.findFriendIdsMany(frontier);
+      const processedUsers = await this.friendshipRepository.findFriendIdsMany(
+        frontier,
+      );
       for (const [userId, friendIds] of processedUsers.entries()) {
         for (const friendId of friendIds) {
           if (!visitedSet.has(friendId)) {
-            const isNew = await this.redisGraph.addVisited(jobId, friendId, jobTtl);
+            const isNew = await this.redisGraph.addVisited(
+              jobId,
+              friendId,
+              jobTtl,
+            );
             if (isNew) {
               nextFrontier.push(friendId);
               visitedIds.push(friendId);
@@ -215,7 +233,12 @@ export class LoadFriendsGraphUseCase {
 
       // Добавить в frontier следующего уровня
       for (const candidateId of nextFrontier) {
-        await this.redisGraph.addToFrontier(jobId, nextLevel, candidateId, jobTtl);
+        await this.redisGraph.addToFrontier(
+          jobId,
+          nextLevel,
+          candidateId,
+          jobTtl,
+        );
       }
 
       const levelLatency = Date.now() - levelStartTime;
@@ -236,7 +259,9 @@ export class LoadFriendsGraphUseCase {
       );
 
       if (nextFrontier.length === 0) {
-        this.logger.log(`Next frontier empty, stopping at level ${currentLevel}`);
+        this.logger.log(
+          `Next frontier empty, stopping at level ${currentLevel}`,
+        );
         break;
       }
 
@@ -319,18 +344,24 @@ export class LoadFriendsGraphUseCase {
           );
         } catch (error: any) {
           this.logger.error(
-            `Failed to process API batch ${i / apiBatchSize + 1} for level ${level}, batch ${batchIndex}: ${error?.message || error}`,
+            `Failed to process API batch ${
+              i / apiBatchSize + 1
+            } for level ${level}, batch ${batchIndex}: ${
+              error?.message || error
+            }`,
           );
           // Продолжаем обработку следующих батчей
         }
       }
 
       // Для haveLocal друзья уже в БД, они будут обработаны при формировании следующего frontier
-      
+
       // Логируем прогресс каждые 10 батчей
       if ((batchIndex + 1) % 10 === 0) {
         this.logger.debug(
-          `Level ${level}: processed ${batchIndex + 1}/${batches.length} DB batches`,
+          `Level ${level}: processed ${batchIndex + 1}/${
+            batches.length
+          } DB batches`,
         );
       }
     }
@@ -413,7 +444,9 @@ export class LoadFriendsGraphUseCase {
               }
             } catch (error: any) {
               this.logger.error(
-                `Failed to process API batch for level ${level}: ${error?.message || error}`,
+                `Failed to process API batch for level ${level}: ${
+                  error?.message || error
+                }`,
               );
             } finally {
               semaphore.release();
@@ -425,7 +458,9 @@ export class LoadFriendsGraphUseCase {
       // Для haveLocal друзья уже в БД, они будут обработаны при формировании следующего frontier
     }
 
-    this.logger.log(`Level ${level}: waiting for ${allPromises.length} API batch promises`);
+    this.logger.log(
+      `Level ${level}: waiting for ${allPromises.length} API batch promises`,
+    );
     const results = await Promise.allSettled(allPromises);
     const failed = results.filter((r) => r.status === "rejected").length;
     if (failed > 0) {
@@ -473,7 +508,12 @@ export class LoadFriendsGraphUseCase {
             while (hasMore) {
               await this.redisGraph.incrStats(jobId, "api_calls", 1, jobTtl);
               if (attempt > 0 && offset === 0) {
-                await this.redisGraph.incrStats(jobId, "api_retries", 1, jobTtl);
+                await this.redisGraph.incrStats(
+                  jobId,
+                  "api_retries",
+                  1,
+                  jobTtl,
+                );
               }
 
               const response = await Promise.race([
@@ -481,12 +521,22 @@ export class LoadFriendsGraphUseCase {
                   user_id: userId,
                   access_token: accessToken,
                   fields: fields,
-                  name_case: nameCase as "nom" | "gen" | "dat" | "acc" | "ins" | "abl" | undefined,
+                  name_case: nameCase as
+                    | "nom"
+                    | "gen"
+                    | "dat"
+                    | "acc"
+                    | "ins"
+                    | "abl"
+                    | undefined,
                   count: pageSize,
                   offset: offset,
                 }),
                 new Promise<never>((_, reject) =>
-                  setTimeout(() => reject(new Error("API timeout")), apiTimeoutMs),
+                  setTimeout(
+                    () => reject(new Error("API timeout")),
+                    apiTimeoutMs,
+                  ),
                 ),
               ]);
 
@@ -501,7 +551,9 @@ export class LoadFriendsGraphUseCase {
                 for (const item of response.items) {
                   if (typeof item === "number") {
                     friendIds.push(item);
-                    usersToUpsert.push(new VkUser(item, "", "") as VkUser & Record<string, any>);
+                    usersToUpsert.push(
+                      new VkUser(item, "", "") as VkUser & Record<string, any>,
+                    );
                   } else if (item && typeof item === "object" && "id" in item) {
                     friendIds.push(item.id);
                     const user = new VkUser(
@@ -510,7 +562,7 @@ export class LoadFriendsGraphUseCase {
                       item.last_name || "",
                       (item as any).domain,
                     ) as VkUser & Record<string, any>;
-                    
+
                     // Сохраняем все дополнительные поля из ответа API
                     for (const key in item) {
                       if (
@@ -526,7 +578,7 @@ export class LoadFriendsGraphUseCase {
                         }
                       }
                     }
-                    
+
                     usersToUpsert.push(user);
                   }
                 }
@@ -539,18 +591,29 @@ export class LoadFriendsGraphUseCase {
               if (allUsersToUpsert.length >= saveBatchSize) {
                 try {
                   await this.userRepository.saveMany(allUsersToUpsert);
-                  await this.redisGraph.incrStats(jobId, "db_writes", 1, jobTtl);
+                  await this.redisGraph.incrStats(
+                    jobId,
+                    "db_writes",
+                    1,
+                    jobTtl,
+                  );
                   // Очищаем сохранённых пользователей, но оставляем friendIds
                   allUsersToUpsert.length = 0;
                 } catch (saveError: any) {
                   this.logger.error(
-                    `Failed to save intermediate batch for user ${userId}: ${saveError?.message || saveError}`,
+                    `Failed to save intermediate batch for user ${userId}: ${
+                      saveError?.message || saveError
+                    }`,
                   );
                   // Продолжаем, попробуем сохранить в конце
                 }
               }
 
-              if (!response.items || response.items.length < pageSize || (total > 0 && offset + response.items.length >= total)) {
+              if (
+                !response.items ||
+                response.items.length < pageSize ||
+                (total > 0 && offset + response.items.length >= total)
+              ) {
                 hasMore = false;
               } else {
                 offset += response.items.length;
@@ -564,7 +627,9 @@ export class LoadFriendsGraphUseCase {
                 await this.redisGraph.incrStats(jobId, "db_writes", 1, jobTtl);
               } catch (saveError: any) {
                 this.logger.error(
-                  `Failed to save final batch for user ${userId}: ${saveError?.message || saveError}`,
+                  `Failed to save final batch for user ${userId}: ${
+                    saveError?.message || saveError
+                  }`,
                 );
                 throw saveError;
               }
@@ -573,12 +638,20 @@ export class LoadFriendsGraphUseCase {
             // Сохранить связи друзей
             if (allFriendIds.length > 0) {
               try {
-                await this.friendshipRepository.replaceForUser(userId, allFriendIds);
-                await this.userRepository.updateFriendsAdded(userId, new Date());
+                await this.friendshipRepository.replaceForUser(
+                  userId,
+                  allFriendIds,
+                );
+                await this.userRepository.updateFriendsAdded(
+                  userId,
+                  new Date(),
+                );
                 await this.redisGraph.incrStats(jobId, "db_writes", 1, jobTtl);
               } catch (saveError: any) {
                 this.logger.error(
-                  `Failed to save friendships for user ${userId}: ${saveError?.message || saveError}`,
+                  `Failed to save friendships for user ${userId}: ${
+                    saveError?.message || saveError
+                  }`,
                 );
                 // Не бросаем ошибку, чтобы не потерять уже сохранённых пользователей
               }
@@ -593,14 +666,18 @@ export class LoadFriendsGraphUseCase {
             attempt++;
             const isVkError = error instanceof VkApiError;
             const isTransient =
-              isVkError && (error.code === 6 || error.code === 9 || error.code >= 500);
+              isVkError &&
+              (error.code === 6 || error.code === 9 || error.code >= 500);
             const isPermanent = isVkError && !isTransient;
 
             if (isPermanent || attempt > maxRetries) {
               await this.redisGraph.incrStats(jobId, "api_errors", 1, jobTtl);
               const errorCode = isVkError ? error.code : undefined;
               if (errorCode !== undefined) {
-                await this.userRepository.updateFriendsAdded(userId, `err:${errorCode}`);
+                await this.userRepository.updateFriendsAdded(
+                  userId,
+                  `err:${errorCode}`,
+                );
               }
               results.set(userId, []);
               success = true; // Помечаем как обработанное, чтобы не ретраить
@@ -641,7 +718,11 @@ export class LoadFriendsGraphUseCase {
     await this.ensureRootUser(startId);
     await this.redisGraph.addVisited(jobId, startId, jobTtl);
     await this.redisGraph.addToFrontier(jobId, 1, startId, jobTtl);
-    await this.redisGraph.updateStats(jobId, { level_processed: 0, visited_count: 1 }, jobTtl);
+    await this.redisGraph.updateStats(
+      jobId,
+      { level_processed: 0, visited_count: 1 },
+      jobTtl,
+    );
 
     let currentLevel = 1;
     const visitedIds: number[] = [startId];
@@ -676,11 +757,17 @@ export class LoadFriendsGraphUseCase {
       const nextFrontier: number[] = [];
       const visitedSet = new Set(visitedIds);
 
-      const processedUsers = await this.friendshipRepository.findFriendIdsMany(frontier);
+      const processedUsers = await this.friendshipRepository.findFriendIdsMany(
+        frontier,
+      );
       for (const [userId, friendIds] of processedUsers.entries()) {
         for (const friendId of friendIds) {
           if (!visitedSet.has(friendId)) {
-            const isNew = await this.redisGraph.addVisited(jobId, friendId, jobTtl);
+            const isNew = await this.redisGraph.addVisited(
+              jobId,
+              friendId,
+              jobTtl,
+            );
             if (isNew) {
               nextFrontier.push(friendId);
               visitedIds.push(friendId);
@@ -690,7 +777,12 @@ export class LoadFriendsGraphUseCase {
       }
 
       for (const candidateId of nextFrontier) {
-        await this.redisGraph.addToFrontier(jobId, nextLevel, candidateId, jobTtl);
+        await this.redisGraph.addToFrontier(
+          jobId,
+          nextLevel,
+          candidateId,
+          jobTtl,
+        );
       }
 
       if (subject) {
@@ -857,7 +949,12 @@ export class LoadFriendsGraphUseCase {
             while (hasMore) {
               await this.redisGraph.incrStats(jobId, "api_calls", 1, jobTtl);
               if (attempt > 0 && offset === 0) {
-                await this.redisGraph.incrStats(jobId, "api_retries", 1, jobTtl);
+                await this.redisGraph.incrStats(
+                  jobId,
+                  "api_retries",
+                  1,
+                  jobTtl,
+                );
               }
 
               const response = await Promise.race([
@@ -865,12 +962,22 @@ export class LoadFriendsGraphUseCase {
                   user_id: userId,
                   access_token: accessToken,
                   fields: fields,
-                  name_case: nameCase as "nom" | "gen" | "dat" | "acc" | "ins" | "abl" | undefined,
+                  name_case: nameCase as
+                    | "nom"
+                    | "gen"
+                    | "dat"
+                    | "acc"
+                    | "ins"
+                    | "abl"
+                    | undefined,
                   count: pageSize,
                   offset: offset,
                 }),
                 new Promise<never>((_, reject) =>
-                  setTimeout(() => reject(new Error("API timeout")), apiTimeoutMs),
+                  setTimeout(
+                    () => reject(new Error("API timeout")),
+                    apiTimeoutMs,
+                  ),
                 ),
               ]);
 
@@ -885,7 +992,9 @@ export class LoadFriendsGraphUseCase {
                 for (const item of response.items) {
                   if (typeof item === "number") {
                     friendIds.push(item);
-                    usersToUpsert.push(new VkUser(item, "", "") as VkUser & Record<string, any>);
+                    usersToUpsert.push(
+                      new VkUser(item, "", "") as VkUser & Record<string, any>,
+                    );
                   } else if (item && typeof item === "object" && "id" in item) {
                     friendIds.push(item.id);
                     const user = new VkUser(
@@ -894,7 +1003,7 @@ export class LoadFriendsGraphUseCase {
                       item.last_name || "",
                       (item as any).domain,
                     ) as VkUser & Record<string, any>;
-                    
+
                     // Сохраняем все дополнительные поля из ответа API
                     for (const key in item) {
                       if (
@@ -910,7 +1019,7 @@ export class LoadFriendsGraphUseCase {
                         }
                       }
                     }
-                    
+
                     usersToUpsert.push(user);
                   }
                 }
@@ -923,18 +1032,29 @@ export class LoadFriendsGraphUseCase {
               if (allUsersToUpsert.length >= saveBatchSize) {
                 try {
                   await this.userRepository.saveMany(allUsersToUpsert);
-                  await this.redisGraph.incrStats(jobId, "db_writes", 1, jobTtl);
+                  await this.redisGraph.incrStats(
+                    jobId,
+                    "db_writes",
+                    1,
+                    jobTtl,
+                  );
                   // Очищаем сохранённых пользователей, но оставляем friendIds
                   allUsersToUpsert.length = 0;
                 } catch (saveError: any) {
                   this.logger.error(
-                    `Failed to save intermediate batch for user ${userId}: ${saveError?.message || saveError}`,
+                    `Failed to save intermediate batch for user ${userId}: ${
+                      saveError?.message || saveError
+                    }`,
                   );
                   // Продолжаем, попробуем сохранить в конце
                 }
               }
 
-              if (!response.items || response.items.length < pageSize || (total > 0 && offset + response.items.length >= total)) {
+              if (
+                !response.items ||
+                response.items.length < pageSize ||
+                (total > 0 && offset + response.items.length >= total)
+              ) {
                 hasMore = false;
               } else {
                 offset += response.items.length;
@@ -948,7 +1068,9 @@ export class LoadFriendsGraphUseCase {
                 await this.redisGraph.incrStats(jobId, "db_writes", 1, jobTtl);
               } catch (saveError: any) {
                 this.logger.error(
-                  `Failed to save final batch for user ${userId}: ${saveError?.message || saveError}`,
+                  `Failed to save final batch for user ${userId}: ${
+                    saveError?.message || saveError
+                  }`,
                 );
                 throw saveError;
               }
@@ -957,12 +1079,20 @@ export class LoadFriendsGraphUseCase {
             // Сохранить связи друзей
             if (allFriendIds.length > 0) {
               try {
-                await this.friendshipRepository.replaceForUser(userId, allFriendIds);
-                await this.userRepository.updateFriendsAdded(userId, new Date());
+                await this.friendshipRepository.replaceForUser(
+                  userId,
+                  allFriendIds,
+                );
+                await this.userRepository.updateFriendsAdded(
+                  userId,
+                  new Date(),
+                );
                 await this.redisGraph.incrStats(jobId, "db_writes", 1, jobTtl);
               } catch (saveError: any) {
                 this.logger.error(
-                  `Failed to save friendships for user ${userId}: ${saveError?.message || saveError}`,
+                  `Failed to save friendships for user ${userId}: ${
+                    saveError?.message || saveError
+                  }`,
                   saveError?.stack,
                 );
                 // Не бросаем ошибку, чтобы не потерять уже сохранённых пользователей
@@ -988,14 +1118,18 @@ export class LoadFriendsGraphUseCase {
             attempt++;
             const isVkError = error instanceof VkApiError;
             const isTransient =
-              isVkError && (error.code === 6 || error.code === 9 || error.code >= 500);
+              isVkError &&
+              (error.code === 6 || error.code === 9 || error.code >= 500);
             const isPermanent = isVkError && !isTransient;
 
             if (isPermanent || attempt > maxRetries) {
               await this.redisGraph.incrStats(jobId, "api_errors", 1, jobTtl);
               const errorCode = isVkError ? error.code : undefined;
               if (errorCode !== undefined) {
-                await this.userRepository.updateFriendsAdded(userId, `err:${errorCode}`);
+                await this.userRepository.updateFriendsAdded(
+                  userId,
+                  `err:${errorCode}`,
+                );
               }
 
               if (subject) {
@@ -1025,5 +1159,3 @@ export class LoadFriendsGraphUseCase {
     }
   }
 }
-
-

@@ -7,4 +7,3 @@ export interface LoadFriendsGraphResult {
   stats: LoadFriendsGraphStats;
   visited_ids: number[];
 }
-

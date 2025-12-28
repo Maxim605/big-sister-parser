@@ -85,7 +85,9 @@ export class ArangoUserRepository implements IUserRepository {
     `);
   }
 
-  async saveMany(users: VkUser[] | Array<VkUser & Record<string, any>>): Promise<void> {
+  async saveMany(
+    users: VkUser[] | Array<VkUser & Record<string, any>>,
+  ): Promise<void> {
     if (!users?.length) return;
     const payload = users.map((u) => {
       const baseFields = {
@@ -98,7 +100,7 @@ export class ArangoUserRepository implements IUserRepository {
             ? u.friends_added.toISOString()
             : u.friends_added ?? null,
       };
-      
+
       // Сохраняем все дополнительные поля из объекта (кроме служебных)
       const additionalFields: Record<string, any> = {};
       for (const key in u) {
@@ -112,15 +114,27 @@ export class ArangoUserRepository implements IUserRepository {
         ) {
           const value = (u as any)[key];
           if (value !== undefined && typeof value !== "function") {
-            if (key === "city" && value !== null && typeof value === "object" && !Array.isArray(value) && "id" in value) {
+            if (
+              key === "city" &&
+              value !== null &&
+              typeof value === "object" &&
+              !Array.isArray(value) &&
+              "id" in value
+            ) {
               additionalFields["city"] = value.id;
             } else if (key === "schools" && Array.isArray(value)) {
               additionalFields["schools"] = value
-                .filter((item) => item !== null && typeof item === "object" && "id" in item)
+                .filter(
+                  (item) =>
+                    item !== null && typeof item === "object" && "id" in item,
+                )
                 .map((item) => item.id);
             } else if (key === "universities" && Array.isArray(value)) {
               additionalFields["universities"] = value
-                .filter((item) => item !== null && typeof item === "object" && "id" in item)
+                .filter(
+                  (item) =>
+                    item !== null && typeof item === "object" && "id" in item,
+                )
                 .map((item) => item.id);
             } else if (value !== null && typeof value === "object") {
               additionalFields[key] = value;
@@ -130,7 +144,7 @@ export class ArangoUserRepository implements IUserRepository {
           }
         }
       }
-      
+
       return { ...baseFields, ...additionalFields };
     });
     await this.db.query(aql`
@@ -169,12 +183,14 @@ export class ArangoUserRepository implements IUserRepository {
     `);
   }
 
-  async findFriendsStatusByIds(
-    ids: number[],
-  ): Promise<
+  async findFriendsStatusByIds(ids: number[]): Promise<
     Map<
       number,
-      { status: "ok" | "error" | "unknown"; errorCode?: string; lastUpdated?: Date }
+      {
+        status: "ok" | "error" | "unknown";
+        errorCode?: string;
+        lastUpdated?: Date;
+      }
     >
   > {
     if (!ids.length) return new Map();
@@ -186,7 +202,11 @@ export class ArangoUserRepository implements IUserRepository {
     const docs: any[] = await cursor.all();
     const result = new Map<
       number,
-      { status: "ok" | "error" | "unknown"; errorCode?: string; lastUpdated?: Date }
+      {
+        status: "ok" | "error" | "unknown";
+        errorCode?: string;
+        lastUpdated?: Date;
+      }
     >();
 
     for (const doc of docs) {
@@ -196,7 +216,10 @@ export class ArangoUserRepository implements IUserRepository {
       let lastUpdated: Date | undefined;
 
       if (friendsAdded !== undefined && friendsAdded !== null) {
-        if (typeof friendsAdded === "string" && friendsAdded.startsWith("err:")) {
+        if (
+          typeof friendsAdded === "string" &&
+          friendsAdded.startsWith("err:")
+        ) {
           status = "error";
           errorCode = friendsAdded.substring(4);
         } else {
@@ -241,8 +264,8 @@ export class ArangoUserRepository implements IUserRepository {
         FOR u IN ${this.db.collection(this.users)}
           FILTER u._key == ${String(userId)}
           UPDATE u WITH { friends_added: ${valueToSave} } IN ${this.db.collection(
-        this.users,
-      )}
+            this.users,
+          )}
       `);
     }
   }

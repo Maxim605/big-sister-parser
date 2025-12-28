@@ -43,7 +43,15 @@ export class VkFriendsGetParamsDto {
   @ApiProperty({
     description: "Дополнительные поля для возврата",
     required: false,
-    example: ["city", "bdate", "sex", "schools", "universities", "timezone", "relation"],
+    example: [
+      "city",
+      "bdate",
+      "sex",
+      "schools",
+      "universities",
+      "timezone",
+      "relation",
+    ],
     type: [String],
   })
   @IsOptional()

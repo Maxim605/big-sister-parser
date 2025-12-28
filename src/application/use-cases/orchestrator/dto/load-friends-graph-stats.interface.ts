@@ -5,4 +5,3 @@ export interface LoadFriendsGraphStats {
   db_reads: number;
   db_writes: number;
 }
-
