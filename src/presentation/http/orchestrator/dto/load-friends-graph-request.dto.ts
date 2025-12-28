@@ -108,8 +108,8 @@ export class LoadFriendsGraphRequestDto {
   worker_count?: number;
 
   @ApiPropertyOptional({
-    description: "Таймаут API запросов в миллисекундах (по умолчанию 30000)",
-    example: 30000,
+    description: "Таймаут API запросов в миллисекундах (по умолчанию 10000)",
+    example: 10000,
     type: Number,
     minimum: 1,
   })
@@ -120,8 +120,8 @@ export class LoadFriendsGraphRequestDto {
   api_timeout_ms?: number;
 
   @ApiPropertyOptional({
-    description: "Максимальное количество повторных попыток (по умолчанию 3)",
-    example: 3,
+    description: "Максимальное количество повторных попыток (по умолчанию 1)",
+    example: 1,
     type: Number,
     minimum: 0,
   })
@@ -133,8 +133,8 @@ export class LoadFriendsGraphRequestDto {
 
   @ApiPropertyOptional({
     description:
-      "Базовое время задержки для экспоненциального backoff (по умолчанию 500)",
-    example: 500,
+      "Базовое время задержки для экспоненциального backoff (по умолчанию 100)",
+    example: 100,
     type: Number,
     minimum: 1,
   })
@@ -176,7 +176,7 @@ export class LoadFriendsGraphRequestDto {
 
   @ApiPropertyOptional({
     description: "Дополнительные поля для запроса друзей (через запятую)",
-    example: "city,bdate,sex",
+    example: "city,bdate,sex,schools,universities,timezone,relation",
     type: String,
   })
   @IsOptional()
