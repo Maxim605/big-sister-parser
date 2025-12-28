@@ -1,10 +1,11 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { aql, Database } from "arangojs";
 import { TOKENS } from "../../../common/tokens";
 import { IFriendshipRepository } from "../../../domain/repositories/ifriendship.repository";
 
 @Injectable()
 export class ArangoFriendshipRepository implements IFriendshipRepository {
+  private readonly logger = new Logger(ArangoFriendshipRepository.name);
   private readonly users = "users";
   private readonly friendships = "friendships";
 
@@ -51,42 +52,91 @@ export class ArangoFriendshipRepository implements IFriendshipRepository {
           'FOR v IN ' + params.users + ' FILTER v._key == @key LIMIT 1 RETURN v',
           { key: params.userId }
         ).toArray()[0];
-        if (!u) return;
+        if (!u) {
+          return { error: 'User not found', userId: params.userId };
+        }
+
+        const removed = db._query(
+          'FOR e IN ' + params.friendships + ' FILTER e._from == @from REMOVE e IN ' + params.friendships + ' RETURN OLD',
+          { from: u._id }
+        ).toArray();
 
         const friendNodes = db._query(
           'FOR fid IN @ids LET f = DOCUMENT(@users, TO_STRING(fid)) FILTER f != null RETURN f._id',
           { ids: params.friendIds, users: params.users }
         ).toArray();
 
-        db._query(
-          'FOR e IN ' + params.friendships + ' FILTER e._from == @from REMOVE e IN ' + params.friendships,
-          { from: u._id }
-        );
-
-        if (friendNodes.length) {
-          db._query(
-            'FOR toId IN @toIds INSERT { _from: @from, _to: toId } IN ' + params.friendships,
+        let createdExisting = 0;
+        if (friendNodes.length > 0) {
+          const inserted = db._query(
+            'FOR toId IN @toIds INSERT { _from: @from, _to: toId } IN ' + params.friendships + ' RETURN NEW',
             { toIds: friendNodes, from: u._id }
-          );
+          ).toArray();
+          createdExisting = inserted.length;
         }
+        
+        const existingIds = new Set(friendNodes.map(n => parseInt(n.split('/')[1])));
+        const missingIds = params.friendIds.filter(fid => !existingIds.has(fid));
+        let createdMissing = 0;
+        let missingError = null;
+        if (missingIds.length > 0) {
+          const edges = [];
+          for (const fid of missingIds) {
+            const friendId = CONCAT(params.users, '/', TO_STRING(fid));
+            edges.push({ _from: u._id, _to: friendId });
+          }
+          try {
+            const inserted = db._query(
+              'FOR e IN @edges INSERT e IN ' + params.friendships + ' RETURN NEW',
+              { edges: edges }
+            ).toArray();
+            createdMissing = inserted.length;
+          } catch (e) {
+            missingError = String(e);
+          }
+        }
+        
+        const actualCount = db._query(
+          'FOR e IN ' + params.friendships + ' FILTER e._from == @from RETURN 1',
+          { from: u._id }
+        ).toArray().length;
+        
+        return {
+          removed: removed.length,
+          createdExisting: createdExisting,
+          createdMissing: createdMissing,
+          totalCreated: createdExisting + createdMissing,
+          actualCount: actualCount,
+          missingCount: missingIds.length,
+          existingCount: friendNodes.length,
+          missingError: missingError
+        };
       }
     `;
 
-    await this.db.executeTransaction(
-      {
-        read: [this.users],
-        write: [this.friendships],
-      },
-      action,
-      {
-        params: {
-          users: this.users,
-          friendships: this.friendships,
-          userId: String(userId),
-          friendIds: uniqueIds,
+    try {
+      await this.db.executeTransaction(
+        {
+          read: [this.users],
+          write: [this.friendships],
         },
-      },
-    );
+        action,
+        {
+          params: {
+            users: this.users,
+            friendships: this.friendships,
+            userId: String(userId),
+            friendIds: uniqueIds,
+          },
+        },
+      );
+    } catch (error: any) {
+      this.logger.error(
+        `replaceForUser failed for userId=${userId}: ${error?.message || error}`,
+        error?.stack,
+      );
+      throw error;
+    }
   }
 
   async countForUser(userId: number): Promise<number> {

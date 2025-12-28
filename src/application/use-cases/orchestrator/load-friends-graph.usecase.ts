@@ -102,6 +102,18 @@ export class LoadFriendsGraphUseCase {
     return result;
   }
 
+  private async ensureRootUser(userId: number): Promise<void> {
+    try {
+      const existing = await this.userRepository.findById(userId);
+      if (!existing) {
+        this.logger.log(`Root user ${userId} not found in DB, creating placeholder`);
+        await this.userRepository.save(new VkUser(userId, "", ""));
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to ensure root user ${userId}: ${e}`);
+    }
+  }
+
   private async executeSyncOrAsync(
     jobId: string,
     startId: number,
@@ -120,7 +132,7 @@ export class LoadFriendsGraphUseCase {
     fields?: string[],
     nameCase?: string,
   ): Promise<LoadFriendsGraphResult> {
-    // Инициализация
+    await this.ensureRootUser(startId);
     await this.redisGraph.addVisited(jobId, startId, jobTtl);
     await this.redisGraph.addToFrontier(jobId, 1, startId, jobTtl);
     await this.redisGraph.updateStats(jobId, { level_processed: 0, visited_count: 1 }, jobTtl);
@@ -441,7 +453,6 @@ export class LoadFriendsGraphUseCase {
       // Проверка lock
       const lockAcquired = await this.redisGraph.tryLockFetch(userId, 60);
       if (!lockAcquired) {
-        this.logger.debug(`Lock already held for user ${userId}, skipping`);
         continue;
       }
 
@@ -595,9 +606,6 @@ export class LoadFriendsGraphUseCase {
               success = true; // Помечаем как обработанное, чтобы не ретраить
             } else if (isTransient && attempt <= maxRetries) {
               const backoff = backoffBaseMs * Math.pow(2, attempt - 1);
-              this.logger.warn(
-                `Transient error for user ${userId}, retrying in ${backoff}ms (attempt ${attempt}/${maxRetries})`,
-              );
               await new Promise((resolve) => setTimeout(resolve, backoff));
             } else {
               throw error;
@@ -630,7 +638,7 @@ export class LoadFriendsGraphUseCase {
     nameCase?: string,
     subject?: Subject<GraphEvent>,
   ): Promise<void> {
-    // Инициализация
+    await this.ensureRootUser(startId);
     await this.redisGraph.addVisited(jobId, startId, jobTtl);
     await this.redisGraph.addToFrontier(jobId, 1, startId, jobTtl);
     await this.redisGraph.updateStats(jobId, { level_processed: 0, visited_count: 1 }, jobTtl);
@@ -955,6 +963,7 @@ export class LoadFriendsGraphUseCase {
               } catch (saveError: any) {
                 this.logger.error(
                   `Failed to save friendships for user ${userId}: ${saveError?.message || saveError}`,
+                  saveError?.stack,
                 );
                 // Не бросаем ошибку, чтобы не потерять уже сохранённых пользователей
               }
