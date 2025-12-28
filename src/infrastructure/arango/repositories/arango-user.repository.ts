@@ -111,10 +111,18 @@ export class ArangoUserRepository implements IUserRepository {
           u.hasOwnProperty(key)
         ) {
           const value = (u as any)[key];
-          // Пропускаем функции и undefined
           if (value !== undefined && typeof value !== "function") {
-            // Сериализуем объекты и массивы
-            if (value !== null && typeof value === "object") {
+            if (key === "city" && value !== null && typeof value === "object" && !Array.isArray(value) && "id" in value) {
+              additionalFields["city"] = value.id;
+            } else if (key === "schools" && Array.isArray(value)) {
+              additionalFields["schools"] = value
+                .filter((item) => item !== null && typeof item === "object" && "id" in item)
+                .map((item) => item.id);
+            } else if (key === "universities" && Array.isArray(value)) {
+              additionalFields["universities"] = value
+                .filter((item) => item !== null && typeof item === "object" && "id" in item)
+                .map((item) => item.id);
+            } else if (value !== null && typeof value === "object") {
               additionalFields[key] = value;
             } else {
               additionalFields[key] = value;
