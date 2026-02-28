@@ -1,9 +1,8 @@
-# мой конфиг settings.prod.yml
-debug: false
-envSecret: "prod-insecure-secret-key-32bytes!"
+debug: true
+envSecret: "04f760c504f76"
 
 basePath: "big-sister-parser"
-host: "http://localhost:3002/"
+host: "http://localhost:3000/"
 enableThrift: true
 
 db:
@@ -16,7 +15,7 @@ db:
 
 arango:
   url: "http://host.docker.internal:8529"
-  database: "bs"
+  database: "_system"
   username: "root"
   password: "test"
 
@@ -26,6 +25,7 @@ redis:
 vkApi:
   baseUrl: "https://api.vk.com/method"
   version: "5.131"
+  defaultStartId: 508133099
 
 token: 
   vkDefault: "vk1.a.fEjt5bznMF-MZxX3..."
