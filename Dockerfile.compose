@@ -14,7 +14,10 @@ RUN npm install --maxsockets 5 --no-audit --no-fund --progress=false 2>&1 || \
 
 COPY . .
 
-RUN [ -f settings.yml ] || ( [ -f settings-example.yml ] && cp settings-example.yml settings.yml ) || true
+# Use docker-compose specific settings (service names instead of localhost)
+RUN [ -f settings.docker.yml ] && cp settings.docker.yml settings.yml || \
+    [ -f settings.yml ] || \
+    ( [ -f settings-example.yml ] && cp settings-example.yml settings.yml ) || true
 
 RUN npm run gen-thrift && npm run build
 
@@ -33,8 +36,3 @@ RUN npm prune --production --no-audit --no-fund || true
 
 EXPOSE 3002
 CMD ["node", "dist/main.js"]
-
-# docker build -t bs-parser .
-# docker run -p 3002:3002 --name bs-parser `
-#    -v "$(pwd)/settings.yml:/app/settings.yml:ro" `
-#    bs-parser
