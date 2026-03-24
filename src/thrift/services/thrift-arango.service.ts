@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from "@nestjs/common";
+import settings from "src/settings";
+
 const thrift = require("thrift");
-const path = require("path");
 const ArangoService = require("../gen-nodejs/ArangoService");
 const ttypes = require("../gen-nodejs/arango_types");
 
@@ -14,7 +15,8 @@ export class ThriftArangoService implements OnModuleInit {
   private async ensureConnection() {
     if (!this.connection || !this.client) {
       try {
-        this.connection = thrift.createConnection("localhost", 9090, {
+        const port = settings.thriftListenPort ?? 9090;
+        this.connection = thrift.createConnection("localhost", port, {
           transport: thrift.TBufferedTransport,
           protocol: thrift.TBinaryProtocol,
         });
