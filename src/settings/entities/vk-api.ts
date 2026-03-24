@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, IsUrl } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl } from "class-validator";
 
 export class VkApi {
   @IsUrl({ require_tld: false })
@@ -10,4 +10,8 @@ export class VkApi {
   @IsNumber()
   @IsNotEmpty()
   public defaultStartId: number;
+
+  @IsOptional()
+  @IsNumber()
+  public defaultGroupId?: number;
 }

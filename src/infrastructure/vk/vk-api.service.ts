@@ -10,6 +10,8 @@ import {
   VkUsersGetResponse,
   VkUsersGetSubscriptionsParams,
   VkUsersGetSubscriptionsResponse,
+  VkGroupsGetParams,
+  VkGroupsGetResponse,
   VkApiError,
 } from "src/infrastructure/vk/types";
 import { TOKENS } from "src/common/tokens";
@@ -171,5 +173,23 @@ export class VkApiService implements IVkApiClient {
       }
     }
     return raw as VkUsersGetSubscriptionsResponse;
+  }
+
+  public async groupsGet(
+    params: VkGroupsGetParams,
+  ): Promise<VkGroupsGetResponse> {
+    const urlBuilder = (t: string) => {
+      const query = new URLSearchParams();
+      query.set("access_token", t);
+      query.set("v", settings.vkApi.version);
+      query.set("group_id", String(params.group_id));
+      if (params.fields && params.fields.length > 0)
+        query.set("fields", params.fields.join(","));
+      return `${this.baseUrl}/groups.getById?${query.toString()}`;
+    };
+    return (await this.getWithLeasing<VkGroupsGetResponse>(
+      urlBuilder,
+      params.access_token,
+    )) as VkGroupsGetResponse;
   }
 }

@@ -84,6 +84,17 @@ export interface VkFriendsResponse {
   items: Array<number>;
 }
 
+export interface VkGroupsGetParams {
+  group_id: number | string;
+  fields?: string[];
+  access_token: string;
+}
+
+export interface VkGroupsGetResponse {
+  count: number;
+  items: VkGroupInfo[];
+}
+
 export class VkApiError extends Error {
   constructor(
     public code: number,
