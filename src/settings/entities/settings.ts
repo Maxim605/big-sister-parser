@@ -2,6 +2,7 @@ import { Type } from "class-transformer";
 import {
   IsBoolean,
   IsDefined,
+  IsNumber,
   IsOptional,
   IsString,
   ValidateNested,
@@ -78,6 +79,12 @@ export class Settings {
   @IsOptional()
   @IsBoolean()
   public enableThrift = false;
+
+  /** TCP-порт встроенного Thrift-сервера Arango (клиент и server.listen). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  public thriftListenPort?: number;
 
   @IsOptional()
   public credentials?: any;

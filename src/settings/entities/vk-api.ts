@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl } from "class-validator";
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from "class-validator";
 
 export class VkApi {
   @IsUrl({ require_tld: false })
@@ -11,7 +17,8 @@ export class VkApi {
   @IsNotEmpty()
   public defaultStartId: number;
 
-  @IsOptional()
+  /** ID группы по умолчанию (используется как дефолтный параметр в Swagger) */
   @IsNumber()
+  @IsOptional()
   public defaultGroupId?: number;
 }
