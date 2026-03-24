@@ -93,3 +93,56 @@ export class VkApiError extends Error {
     this.name = "VkApiError";
   }
 }
+
+// ─── VK Group (Сообщество) ────────────────────────────────────────────────────
+
+/** Параметры запроса информации о группе (groups.getById) */
+export interface VkGroupsGetByIdParams {
+  /** ID или короткое имя группы */
+  group_id: string | number;
+  /** Список полей для запроса */
+  fields?: string[];
+  /** Токен доступа */
+  access_token: string;
+}
+
+/** Объект группы ВКонтакте (поля зависят от запрошенных fields) */
+export interface VkGroupDetail {
+  id: number;
+  name: string;
+  screen_name: string;
+  is_closed?: number;
+  type?: string;
+  activity?: string;
+  members_count?: number;
+  city?: { id: number; title: string };
+  country?: { id: number; title: string };
+  wall?: number;
+  counters?: Record<string, number>;
+  description?: string;
+  status?: string;
+  verified?: number;
+  [key: string]: any;
+}
+
+/** Параметры запроса участников группы (groups.getMembers) */
+export interface VkGroupsGetMembersParams {
+  /** ID или короткое имя группы */
+  group_id: string | number;
+  /** Смещение */
+  offset?: number;
+  /** Количество участников (макс. 1000) */
+  count?: number;
+  /** Дополнительные поля профиля */
+  fields?: string[];
+  /** Фильтр: friends / unsure / managers */
+  filter?: string;
+  /** Токен доступа */
+  access_token: string;
+}
+
+/** Ответ на запрос участников группы */
+export interface VkGroupsMembersResponse {
+  count: number;
+  items: Array<number | Record<string, any>>;
+}

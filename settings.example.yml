@@ -29,6 +29,7 @@ vkApi:
   baseUrl: "https://api.vk.com/method"
   version: "5.131"
   defaultStartId: 508133099
+  defaultGroupId: 31480508
 
 token: 
   vkDefault: "vk1.a.abcdef123456..."

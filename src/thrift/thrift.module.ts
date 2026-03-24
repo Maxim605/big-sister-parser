@@ -3,6 +3,7 @@ import { Database } from "arangojs";
 import { ArangoModule } from "../arango/arango.module";
 import { ThriftArangoService } from "./services";
 import { ThriftController } from "./thrift.controller";
+import settings from "../settings";
 
 const thrift = require("thrift");
 const path = require("path");
@@ -59,7 +60,8 @@ const path = require("path");
           },
         };
         const server = thrift.createServer(arangoService, handler);
-        server.listen(9090);
+        const port = settings.thriftListenPort ?? 9090;
+        server.listen(port);
         return server;
       },
       inject: ["ARANGODB_CLIENT"],
@@ -70,6 +72,8 @@ const path = require("path");
 })
 export class ThriftModule implements OnModuleInit {
   onModuleInit() {
-    console.log("Thrift server started on port 9090");
+    console.log(
+      `Thrift server started on port ${settings.thriftListenPort ?? 9090}`,
+    );
   }
 }
