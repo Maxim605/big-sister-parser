@@ -148,7 +148,21 @@ export class VkUserPostsUseCase {
         attachments: post.attachments ? JSON.stringify(post.attachments) : "",
         saved_at: new Date().toISOString(),
       });
-      if (result.success) totalSaved++;
+      if (result.success) {
+        totalSaved++;
+        // write-ребро: автор → пост
+        const fromId = post.from_id ?? params.user_id;
+        const createdAt = post.date
+          ? new Date(post.date * 1000).toISOString()
+          : "";
+        await this.thrift.save("interactions", {
+          _key: `write_${fromId}_${params.user_id}_${post.id}`,
+          _from: `users/${fromId}`,
+          _to: `posts/${params.user_id}_${post.id}`,
+          type: "write",
+          created_at: createdAt,
+        });
+      }
 
       // Лайки
       if (params.with_likes !== false) {
@@ -262,14 +276,17 @@ export class VkUserPostsUseCase {
     postId: number,
     userIds: number[],
   ): Promise<void> {
-    await this.thrift.save("post_likes", {
-      _key: `like_${ownerId}_${postId}`,
-      owner_id: String(ownerId),
-      post_id: String(postId),
-      count: String(userIds.length),
-      items: JSON.stringify(userIds),
-      updated_at: new Date().toISOString(),
-    });
+    const postKey = `${ownerId}_${postId}`;
+    for (const userId of userIds) {
+      const key = `like_${userId}_${ownerId}_${postId}`;
+      await this.thrift.save("interactions", {
+        _key: key,
+        _from: `users/${userId}`,
+        _to: `posts/${postKey}`,
+        type: "like",
+        created_at: "",
+      });
+    }
   }
 
   private async saveComments(
@@ -277,14 +294,41 @@ export class VkUserPostsUseCase {
     postId: number,
     items: any[],
   ): Promise<void> {
-    await this.thrift.save("post_comments", {
-      _key: `comments_${ownerId}_${postId}`,
-      owner_id: String(ownerId),
-      post_id: String(postId),
-      count: String(items.length),
-      items: JSON.stringify(items),
-      updated_at: new Date().toISOString(),
-    });
+    const postKey = `${ownerId}_${postId}`;
+    for (const item of items) {
+      if (!item?.id) continue;
+      const rawFromId = item.from_id ?? item.owner_id ?? 0;
+      const isGroup = rawFromId < 0;
+      const fromId = Math.abs(rawFromId);
+      const commentId = String(item.id);
+      const createdAt = item.date
+        ? new Date(item.date * 1000).toISOString()
+        : "";
+      const fromRef = isGroup ? `groups/${fromId}` : `users/${fromId}`;
+
+      // Текст комментария → comment
+      await this.thrift.save("comment", {
+        _key: `${ownerId}_${postId}_${commentId}`,
+        owner_id: String(ownerId),
+        post_id: String(postId),
+        comment_id: commentId,
+        from_id: String(fromId),
+        is_group: isGroup ? "true" : "false",
+        text: item.text ?? "",
+        date: item.date != null ? String(item.date) : "",
+        created_at: createdAt,
+      });
+
+      // Ребро → interactions
+      await this.thrift.save("interactions", {
+        _key: `comment_${fromId}_${ownerId}_${postId}_${commentId}`,
+        _from: fromRef,
+        _to: `posts/${postKey}`,
+        type: "comment",
+        comment_id: commentId,
+        created_at: createdAt,
+      });
+    }
   }
 
   private delay(ms = this.DELAY_MS): Promise<void> {
