@@ -8,7 +8,6 @@ export const TOKENS = {
   ISubscriptionRepository: Symbol("ISubscriptionRepository"),
 
   ISocialApiClient: Symbol("ISocialApiClient"),
-  IVkWallApiClient: Symbol("IVkWallApiClient"),
   IVkGroupApiClient: Symbol("IVkGroupApiClient"),
   IVkInteractionsApiClient: Symbol("IVkInteractionsApiClient"),
 
