@@ -31,6 +31,7 @@ import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { VkUserSubscriptionsQueueEventsService } from "src/infrastructure/queue/vk-user-subscriptions-queue-events.service";
 import { VkApiService } from "src/infrastructure/vk/vk-api.service";
+import { VkUserPostsUseCase } from "src/application/use-cases/vk-user/vk-user-posts.usecase";
 import settings from "src/settings";
 
 const DEFAULT_USER_ID = settings.vkApi.defaultUserId ?? 310305122;
@@ -48,6 +49,7 @@ export class VkUserController {
     private readonly subsJobs: VkUserSubscriptionsJobService,
     private readonly subsQueueSvc: VkUserSubscriptionsQueueEventsService,
     private readonly vkApi: VkApiService,
+    private readonly userPostsUseCase: VkUserPostsUseCase,
   ) {}
 
   @Get(`${USER_TAG}/fetch`)
@@ -380,5 +382,136 @@ export class VkUserController {
       date_to: to,
       items: result,
     };
+  }
+
+  @Post(`${USER_TAG}/posts/load/by-period`)
+  @ApiOperation({
+    summary: "Загрузить посты пользователя за период с лайками и комментариями",
+    description:
+      "Собирает посты за указанный период, сохраняет в posts, лайки в post_likes, комментарии в post_comments.",
+  })
+  @ApiQuery({
+    name: "user_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_USER_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
+  @ApiQuery({
+    name: "date_from",
+    type: Number,
+    required: false,
+    description: "Unix timestamp начала периода",
+  })
+  @ApiQuery({
+    name: "date_to",
+    type: Number,
+    required: false,
+    description: "Unix timestamp конца периода",
+  })
+  @ApiQuery({ name: "page_size", type: Number, required: false, example: 100 })
+  @ApiQuery({
+    name: "with_likes",
+    type: Boolean,
+    required: false,
+    example: true,
+  })
+  @ApiQuery({
+    name: "with_comments",
+    type: Boolean,
+    required: false,
+    example: true,
+  })
+  async loadPostsByPeriod(
+    @Query("user_id") user_id: string,
+    @Query("access_token") access_token: string,
+    @Query("date_from") date_from?: string,
+    @Query("date_to") date_to?: string,
+    @Query("page_size") page_size?: string,
+    @Query("with_likes") with_likes?: string,
+    @Query("with_comments") with_comments?: string,
+  ) {
+    if (!user_id) throw new BadRequestException("user_id is required");
+    if (!access_token)
+      throw new BadRequestException("access_token is required");
+    const now = Math.floor(Date.now() / 1000);
+    return this.userPostsUseCase.loadByPeriod({
+      user_id: Number(user_id),
+      access_token,
+      date_from:
+        date_from !== undefined ? Number(date_from) : now - 30 * 24 * 3600,
+      date_to: date_to !== undefined ? Number(date_to) : now,
+      page_size: page_size !== undefined ? Number(page_size) : 100,
+      with_likes: with_likes !== "false",
+      with_comments: with_comments !== "false",
+    });
+  }
+
+  @Post(`${USER_TAG}/posts/load`)
+  @ApiOperation({
+    summary:
+      "Загрузить посты пользователя (count/offset) с лайками и комментариями",
+    description:
+      "Собирает count постов начиная с offset, сохраняет в posts, лайки в post_likes, комментарии в post_comments.",
+  })
+  @ApiQuery({
+    name: "user_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_USER_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
+  @ApiQuery({
+    name: "count",
+    type: Number,
+    required: false,
+    description: "Кол-во постов (0 = все)",
+    example: 10,
+  })
+  @ApiQuery({ name: "offset", type: Number, required: false, example: 0 })
+  @ApiQuery({ name: "page_size", type: Number, required: false, example: 100 })
+  @ApiQuery({
+    name: "with_likes",
+    type: Boolean,
+    required: false,
+    example: true,
+  })
+  @ApiQuery({
+    name: "with_comments",
+    type: Boolean,
+    required: false,
+    example: true,
+  })
+  async loadPostsByCount(
+    @Query("user_id") user_id: string,
+    @Query("access_token") access_token: string,
+    @Query("count") count?: string,
+    @Query("offset") offset?: string,
+    @Query("page_size") page_size?: string,
+    @Query("with_likes") with_likes?: string,
+    @Query("with_comments") with_comments?: string,
+  ) {
+    if (!user_id) throw new BadRequestException("user_id is required");
+    if (!access_token)
+      throw new BadRequestException("access_token is required");
+    return this.userPostsUseCase.loadByCountOffset({
+      user_id: Number(user_id),
+      access_token,
+      count: count !== undefined ? Number(count) : 10,
+      offset: offset !== undefined ? Number(offset) : 0,
+      page_size: page_size !== undefined ? Number(page_size) : 100,
+      with_likes: with_likes !== "false",
+      with_comments: with_comments !== "false",
+    });
   }
 }

@@ -37,10 +37,19 @@ export class VkInteractionsApiClient implements IVkInteractionsApiClient {
     try {
       const { data } = await lastValueFrom(this.http.get(url));
       if (data?.error) {
-        throw new VkApiError(
-          Number(data.error.error_code) || 0,
-          data.error.error_msg || "VK API error",
-        );
+        const errorCode = Number(data.error.error_code) || 0;
+        const errorMsg = data.error.error_msg || "VK API error";
+
+        // Логируем flood control ошибки (код 6 или 9)
+        if (errorCode === 6 || errorCode === 9) {
+          this.logger.warn(
+            `[FLOOD CONTROL] ${method} - error_code=${errorCode}: ${errorMsg}. Params: ${JSON.stringify(
+              params,
+            )}`,
+          );
+        }
+
+        throw new VkApiError(errorCode, errorMsg);
       }
       return (data.response ?? data) as T;
     } catch (e: any) {

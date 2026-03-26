@@ -13,9 +13,19 @@ import { Queue } from "bullmq";
 import { TOKENS } from "src/common/tokens";
 import { VkUserSubscriptionsJobService } from "src/infrastructure/jobs/vk-user-subscriptions.job.service";
 import { VkUserSubscriptionsQueueEventsService } from "src/infrastructure/queue/vk-user-subscriptions-queue-events.service";
+import { VkUserPostsUseCase } from "src/application/use-cases/vk-user/vk-user-posts.usecase";
+import { VkGroupModule } from "../vk-group/vk-group.module";
+import { VkInteractionsModule } from "../vk-interactions/vk-interactions.module";
 
 @Module({
-  imports: [HttpModule, ArangoRepositoriesModule, KeyModule, RedisModule],
+  imports: [
+    HttpModule,
+    ArangoRepositoriesModule,
+    KeyModule,
+    RedisModule,
+    VkGroupModule,
+    VkInteractionsModule,
+  ],
   providers: [
     VkApiService,
     {
@@ -35,6 +45,7 @@ import { VkUserSubscriptionsQueueEventsService } from "src/infrastructure/queue/
       inject: [TOKENS.RedisClient],
     },
     VkUserSubscriptionsQueueEventsService,
+    VkUserPostsUseCase,
   ],
   controllers: [VkUserController],
   exports: [
