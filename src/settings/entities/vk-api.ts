@@ -21,4 +21,9 @@ export class VkApi {
   @IsNumber()
   @IsOptional()
   public defaultGroupId?: number;
+
+  /** ID поста по умолчанию (используется как дефолтный параметр в Swagger) */
+  @IsNumber()
+  @IsOptional()
+  public defaultPostId?: number;
 }

@@ -10,6 +10,7 @@ export const TOKENS = {
   ISocialApiClient: Symbol("ISocialApiClient"),
   IVkWallApiClient: Symbol("IVkWallApiClient"),
   IVkGroupApiClient: Symbol("IVkGroupApiClient"),
+  IVkInteractionsApiClient: Symbol("IVkInteractionsApiClient"),
 
   IKeyManager: Symbol("IKeyManager"),
   IRateLimiter: Symbol("IRateLimiter"),
