@@ -41,7 +41,9 @@ export class VkLikesUseCase {
     private readonly thrift: ThriftArangoService,
   ) {}
 
-  async fetch(params: LoadLikesParams): Promise<{ post_id: number; count: number; items: number[] }[]> {
+  async fetch(
+    params: LoadLikesParams,
+  ): Promise<{ post_id: number; count: number; items: number[] }[]> {
     const results = [];
     for (const post_id of params.post_ids) {
       const res = await this.api.likesGetList({
@@ -49,7 +51,10 @@ export class VkLikesUseCase {
         owner_id: params.owner_id,
         item_id: post_id,
         offset: params.offset ?? 0,
-        count: Math.min(params.page_size ?? this.MAX_PAGE_SIZE, this.MAX_PAGE_SIZE),
+        count: Math.min(
+          params.page_size ?? this.MAX_PAGE_SIZE,
+          this.MAX_PAGE_SIZE,
+        ),
         access_token: params.access_token,
       });
       results.push({ post_id, count: res.count, items: res.items });
@@ -59,18 +64,27 @@ export class VkLikesUseCase {
 
   async getFromDb(owner_id: number, post_id: number): Promise<any | null> {
     try {
-      const result = await this.thrift.get("likes", `like_${owner_id}_${post_id}_meta`);
+      const result = await this.thrift.get(
+        "likes",
+        `like_${owner_id}_${post_id}_meta`,
+      );
       return result?.fields ?? null;
     } catch {
       return null;
     }
   }
 
-  async loadSync(params: LoadLikesParams, onProgress?: (e: LikesEvent) => void): Promise<LoadLikesResult> {
+  async loadSync(
+    params: LoadLikesParams,
+    onProgress?: (e: LikesEvent) => void,
+  ): Promise<LoadLikesResult> {
     return this.paginate(params, onProgress, false);
   }
 
-  async loadAsync(params: LoadLikesParams, onProgress?: (e: LikesEvent) => void): Promise<LoadLikesResult> {
+  async loadAsync(
+    params: LoadLikesParams,
+    onProgress?: (e: LikesEvent) => void,
+  ): Promise<LoadLikesResult> {
     return this.paginate(params, onProgress, true);
   }
 
@@ -88,7 +102,10 @@ export class VkLikesUseCase {
     onProgress: ((e: LikesEvent) => void) | undefined,
     parallel: boolean,
   ): Promise<LoadLikesResult> {
-    const pageSize = Math.min(params.page_size ?? this.MAX_PAGE_SIZE, this.MAX_PAGE_SIZE);
+    const pageSize = Math.min(
+      params.page_size ?? this.MAX_PAGE_SIZE,
+      this.MAX_PAGE_SIZE,
+    );
     let totalFetched = 0;
     let totalSaved = 0;
 
@@ -102,7 +119,8 @@ export class VkLikesUseCase {
         access_token: params.access_token,
       });
       const total = firstPage.count ?? 0;
-      const limit = (params.count ?? 0) > 0 ? Math.min(params.count!, total) : total;
+      const limit =
+        (params.count ?? 0) > 0 ? Math.min(params.count!, total) : total;
 
       let fetched = 0;
       let saved = 0;
@@ -111,10 +129,21 @@ export class VkLikesUseCase {
       saved += await this.saveLikes(params.owner_id, post_id, firstPage.items);
       fetched += firstPage.items.length;
       page++;
-      onProgress?.({ type: "page", post_id, page, saved, total, total_saved: saved });
+      onProgress?.({
+        type: "page",
+        post_id,
+        page,
+        saved,
+        total,
+        total_saved: saved,
+      });
 
       const offsets: number[] = [];
-      for (let off = (params.offset ?? 0) + pageSize; off < (params.offset ?? 0) + limit; off += pageSize) {
+      for (
+        let off = (params.offset ?? 0) + pageSize;
+        off < (params.offset ?? 0) + limit;
+        off += pageSize
+      ) {
         offsets.push(off);
       }
 
@@ -127,11 +156,22 @@ export class VkLikesUseCase {
           count: pageSize,
           access_token: params.access_token,
         });
-        const s = await this.saveLikes(params.owner_id, post_id, pageData.items);
+        const s = await this.saveLikes(
+          params.owner_id,
+          post_id,
+          pageData.items,
+        );
         fetched += pageData.items.length;
         saved += s;
         page++;
-        onProgress?.({ type: "page", post_id, page, saved: s, total, total_saved: saved });
+        onProgress?.({
+          type: "page",
+          post_id,
+          page,
+          saved: s,
+          total,
+          total_saved: saved,
+        });
         if (pageData.items.length === 0) break;
       }
 
@@ -150,10 +190,18 @@ export class VkLikesUseCase {
       }
     }
 
-    return { total_fetched: totalFetched, total_saved: totalSaved, posts_processed: params.post_ids.length };
+    return {
+      total_fetched: totalFetched,
+      total_saved: totalSaved,
+      posts_processed: params.post_ids.length,
+    };
   }
 
-  private async saveLikes(owner_id: number, post_id: number, userIds: number[]): Promise<number> {
+  private async saveLikes(
+    owner_id: number,
+    post_id: number,
+    userIds: number[],
+  ): Promise<number> {
     let saved = 0;
     for (const uid of userIds) {
       const result = await this.thrift.save("likes", {
@@ -170,11 +218,18 @@ export class VkLikesUseCase {
     return saved;
   }
 
-  private async executeStream(params: LoadLikesParams, subject: Subject<LikesEvent>): Promise<void> {
+  private async executeStream(
+    params: LoadLikesParams,
+    subject: Subject<LikesEvent>,
+  ): Promise<void> {
     subject.next({ type: "started" });
     try {
       const result = await this.loadSync(params, (e) => subject.next(e));
-      subject.next({ type: "completed", total: result.total_fetched, total_saved: result.total_saved });
+      subject.next({
+        type: "completed",
+        total: result.total_fetched,
+        total_saved: result.total_saved,
+      });
     } catch (err: any) {
       subject.next({ type: "error", error: err.message || String(err) });
     } finally {

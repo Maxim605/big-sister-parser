@@ -260,7 +260,9 @@ export class VkGroupController {
         next: (event) => subscriber.next({ data: event } as MessageEvent),
         error: (err) => {
           this.logger.error(`[info/load/stream] ${err.message}`, err.stack);
-          subscriber.next({ data: { type: "error", error: err.message } } as MessageEvent);
+          subscriber.next({
+            data: { type: "error", error: err.message },
+          } as MessageEvent);
           subscriber.complete();
         },
         complete: () => subscriber.complete(),
@@ -450,7 +452,10 @@ export class VkGroupController {
           obs.subscribe({
             next: (event) => subscriber.next({ data: event } as MessageEvent),
             error: (err) => {
-              this.logger.error(`[posts/load stream] ${err.message}`, err.stack);
+              this.logger.error(
+                `[posts/load stream] ${err.message}`,
+                err.stack,
+              );
               subscriber.error(err);
             },
             complete: () => subscriber.complete(),
@@ -521,7 +526,9 @@ export class VkGroupController {
         next: (event) => subscriber.next({ data: event } as MessageEvent),
         error: (err) => {
           this.logger.error(`[posts/load/stream] ${err.message}`, err.stack);
-          subscriber.next({ data: { type: "error", error: err.message } } as MessageEvent);
+          subscriber.next({
+            data: { type: "error", error: err.message },
+          } as MessageEvent);
           subscriber.complete();
         },
         complete: () => subscriber.complete(),
@@ -534,7 +541,8 @@ export class VkGroupController {
   @Get("members/fetch")
   @ApiOperation({
     summary: "Получить участников группы из VK API (без сохранения)",
-    description: "Вызывает groups.getMembers и возвращает одну страницу участников.",
+    description:
+      "Вызывает groups.getMembers и возвращает одну страницу участников.",
   })
   @ApiQuery({
     name: "group_id",

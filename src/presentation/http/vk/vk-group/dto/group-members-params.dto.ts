@@ -39,8 +39,7 @@ export class GroupMembersParamsDto {
   offset?: number;
 
   @ApiPropertyOptional({
-    description:
-      "Общее количество участников для загрузки (0 = все)",
+    description: "Общее количество участников для загрузки (0 = все)",
     example: 0,
     default: 0,
   })
@@ -82,7 +81,8 @@ export class GroupMembersParamsDto {
   rewrite?: boolean;
 
   @ApiPropertyOptional({
-    description: "Режим выполнения: sync (последовательный), async (параллельный), stream (потоковый SSE)",
+    description:
+      "Режим выполнения: sync (последовательный), async (параллельный), stream (потоковый SSE)",
     enum: ["sync", "async", "stream"],
     default: "sync",
     example: "sync",

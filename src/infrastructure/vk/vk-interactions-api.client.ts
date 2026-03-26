@@ -19,7 +19,11 @@ export class VkInteractionsApiClient implements IVkInteractionsApiClient {
 
   constructor(private readonly http: HttpService) {}
 
-  private async call<T>(method: string, params: Record<string, any>, token: string): Promise<T> {
+  private async call<T>(
+    method: string,
+    params: Record<string, any>,
+    token: string,
+  ): Promise<T> {
     await new Promise((r) => setTimeout(r, 340));
     const query = new URLSearchParams();
     query.set("access_token", token);
@@ -33,7 +37,10 @@ export class VkInteractionsApiClient implements IVkInteractionsApiClient {
     try {
       const { data } = await lastValueFrom(this.http.get(url));
       if (data?.error) {
-        throw new VkApiError(Number(data.error.error_code) || 0, data.error.error_msg || "VK API error");
+        throw new VkApiError(
+          Number(data.error.error_code) || 0,
+          data.error.error_msg || "VK API error",
+        );
       }
       return (data.response ?? data) as T;
     } catch (e: any) {
@@ -43,13 +50,25 @@ export class VkInteractionsApiClient implements IVkInteractionsApiClient {
     }
   }
 
-  async likesGetList(params: VkLikesGetListParams): Promise<VkLikesGetListResponse> {
+  async likesGetList(
+    params: VkLikesGetListParams,
+  ): Promise<VkLikesGetListResponse> {
     const { access_token, ...rest } = params;
-    return this.call<VkLikesGetListResponse>("likes.getList", rest, access_token);
+    return this.call<VkLikesGetListResponse>(
+      "likes.getList",
+      rest,
+      access_token,
+    );
   }
 
-  async wallGetComments(params: VkWallGetCommentsParams): Promise<VkWallGetCommentsResponse> {
+  async wallGetComments(
+    params: VkWallGetCommentsParams,
+  ): Promise<VkWallGetCommentsResponse> {
     const { access_token, ...rest } = params;
-    return this.call<VkWallGetCommentsResponse>("wall.getComments", rest, access_token);
+    return this.call<VkWallGetCommentsResponse>(
+      "wall.getComments",
+      rest,
+      access_token,
+    );
   }
 }

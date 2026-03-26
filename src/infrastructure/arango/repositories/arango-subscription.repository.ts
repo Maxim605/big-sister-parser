@@ -196,7 +196,10 @@ export class ArangoSubscriptionRepository implements ISubscriptionRepository {
       }
     `;
     await this.db.executeTransaction(
-      { read: [this.groups, this.users], write: [this.users, this.subscriptions] },
+      {
+        read: [this.groups, this.users],
+        write: [this.users, this.subscriptions],
+      },
       action,
       {
         params: {

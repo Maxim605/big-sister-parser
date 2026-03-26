@@ -67,9 +67,7 @@ export class VkGroupApiClient implements IVkGroupApiClient {
    * Получить информацию о группе (groups.getById).
    * Возвращает массив объектов группы (обычно один элемент).
    */
-  async groupsGetById(
-    params: VkGroupsGetByIdParams,
-  ): Promise<VkGroupDetail[]> {
+  async groupsGetById(params: VkGroupsGetByIdParams): Promise<VkGroupDetail[]> {
     const { access_token, fields, group_id } = params;
     return this.call<VkGroupDetail[]>(
       "groups.getById",

@@ -42,14 +42,19 @@ export class VkCommentsUseCase {
     private readonly thrift: ThriftArangoService,
   ) {}
 
-  async fetch(params: LoadCommentsParams): Promise<{ post_id: number; count: number; items: any[] }[]> {
+  async fetch(
+    params: LoadCommentsParams,
+  ): Promise<{ post_id: number; count: number; items: any[] }[]> {
     const results = [];
     for (const post_id of params.post_ids) {
       const res = await this.api.wallGetComments({
         owner_id: params.owner_id,
         post_id,
         offset: params.offset ?? 0,
-        count: Math.min(params.page_size ?? this.MAX_PAGE_SIZE, this.MAX_PAGE_SIZE),
+        count: Math.min(
+          params.page_size ?? this.MAX_PAGE_SIZE,
+          this.MAX_PAGE_SIZE,
+        ),
         fields: params.fields,
         access_token: params.access_token,
       });
@@ -60,18 +65,27 @@ export class VkCommentsUseCase {
 
   async getFromDb(owner_id: number, post_id: number): Promise<any | null> {
     try {
-      const result = await this.thrift.get("comments", `comment_${owner_id}_${post_id}_meta`);
+      const result = await this.thrift.get(
+        "comments",
+        `comment_${owner_id}_${post_id}_meta`,
+      );
       return result?.fields ?? null;
     } catch {
       return null;
     }
   }
 
-  async loadSync(params: LoadCommentsParams, onProgress?: (e: CommentsEvent) => void): Promise<LoadCommentsResult> {
+  async loadSync(
+    params: LoadCommentsParams,
+    onProgress?: (e: CommentsEvent) => void,
+  ): Promise<LoadCommentsResult> {
     return this.paginate(params, onProgress, false);
   }
 
-  async loadAsync(params: LoadCommentsParams, onProgress?: (e: CommentsEvent) => void): Promise<LoadCommentsResult> {
+  async loadAsync(
+    params: LoadCommentsParams,
+    onProgress?: (e: CommentsEvent) => void,
+  ): Promise<LoadCommentsResult> {
     return this.paginate(params, onProgress, true);
   }
 
@@ -89,7 +103,10 @@ export class VkCommentsUseCase {
     onProgress: ((e: CommentsEvent) => void) | undefined,
     parallel: boolean,
   ): Promise<LoadCommentsResult> {
-    const pageSize = Math.min(params.page_size ?? this.MAX_PAGE_SIZE, this.MAX_PAGE_SIZE);
+    const pageSize = Math.min(
+      params.page_size ?? this.MAX_PAGE_SIZE,
+      this.MAX_PAGE_SIZE,
+    );
     let totalFetched = 0;
     let totalSaved = 0;
 
@@ -103,19 +120,35 @@ export class VkCommentsUseCase {
         access_token: params.access_token,
       });
       const total = firstPage.count ?? 0;
-      const limit = (params.count ?? 0) > 0 ? Math.min(params.count!, total) : total;
+      const limit =
+        (params.count ?? 0) > 0 ? Math.min(params.count!, total) : total;
 
       let fetched = 0;
       let saved = 0;
       let page = 0;
 
-      saved += await this.saveComments(params.owner_id, post_id, firstPage.items);
+      saved += await this.saveComments(
+        params.owner_id,
+        post_id,
+        firstPage.items,
+      );
       fetched += firstPage.items.length;
       page++;
-      onProgress?.({ type: "page", post_id, page, saved, total, total_saved: saved });
+      onProgress?.({
+        type: "page",
+        post_id,
+        page,
+        saved,
+        total,
+        total_saved: saved,
+      });
 
       const offsets: number[] = [];
-      for (let off = (params.offset ?? 0) + pageSize; off < (params.offset ?? 0) + limit; off += pageSize) {
+      for (
+        let off = (params.offset ?? 0) + pageSize;
+        off < (params.offset ?? 0) + limit;
+        off += pageSize
+      ) {
         offsets.push(off);
       }
 
@@ -128,11 +161,22 @@ export class VkCommentsUseCase {
           fields: params.fields,
           access_token: params.access_token,
         });
-        const s = await this.saveComments(params.owner_id, post_id, pageData.items);
+        const s = await this.saveComments(
+          params.owner_id,
+          post_id,
+          pageData.items,
+        );
         fetched += pageData.items.length;
         saved += s;
         page++;
-        onProgress?.({ type: "page", post_id, page, saved: s, total, total_saved: saved });
+        onProgress?.({
+          type: "page",
+          post_id,
+          page,
+          saved: s,
+          total,
+          total_saved: saved,
+        });
         if (pageData.items.length === 0) break;
       }
 
@@ -151,10 +195,18 @@ export class VkCommentsUseCase {
       }
     }
 
-    return { total_fetched: totalFetched, total_saved: totalSaved, posts_processed: params.post_ids.length };
+    return {
+      total_fetched: totalFetched,
+      total_saved: totalSaved,
+      posts_processed: params.post_ids.length,
+    };
   }
 
-  private async saveComments(owner_id: number, post_id: number, items: any[]): Promise<number> {
+  private async saveComments(
+    owner_id: number,
+    post_id: number,
+    items: any[],
+  ): Promise<number> {
     let saved = 0;
     for (const comment of items) {
       if (!comment?.id) continue;
@@ -177,11 +229,18 @@ export class VkCommentsUseCase {
     return saved;
   }
 
-  private async executeStream(params: LoadCommentsParams, subject: Subject<CommentsEvent>): Promise<void> {
+  private async executeStream(
+    params: LoadCommentsParams,
+    subject: Subject<CommentsEvent>,
+  ): Promise<void> {
     subject.next({ type: "started" });
     try {
       const result = await this.loadSync(params, (e) => subject.next(e));
-      subject.next({ type: "completed", total: result.total_fetched, total_saved: result.total_saved });
+      subject.next({
+        type: "completed",
+        total: result.total_fetched,
+        total_saved: result.total_saved,
+      });
     } catch (err: any) {
       subject.next({ type: "error", error: err.message || String(err) });
     } finally {

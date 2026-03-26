@@ -7,7 +7,21 @@ import { OrchestratorModule } from "../orchestrator/orchestrator.module";
 import { VkInteractionsModule } from "./vk-interactions/vk-interactions.module";
 
 @Module({
-  imports: [VkGroupModule, VkFriendsModule, VkUserModule, VkWallModule, OrchestratorModule, VkInteractionsModule],
-  exports: [VkGroupModule, VkFriendsModule, VkUserModule, VkWallModule, OrchestratorModule, VkInteractionsModule],
+  imports: [
+    VkGroupModule,
+    VkFriendsModule,
+    VkUserModule,
+    VkWallModule,
+    OrchestratorModule,
+    VkInteractionsModule,
+  ],
+  exports: [
+    VkGroupModule,
+    VkFriendsModule,
+    VkUserModule,
+    VkWallModule,
+    OrchestratorModule,
+    VkInteractionsModule,
+  ],
 })
 export class VkModule {}

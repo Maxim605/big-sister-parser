@@ -33,11 +33,27 @@ export class VkInteractionsController {
 
   @Get("likes/fetch")
   @ApiOperation({ summary: "Получить лайки поста из VK API (без сохранения)" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_ids", type: String, required: true, description: "ID постов через запятую", example: DEFAULT_POST_ID })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_ids",
+    type: String,
+    required: true,
+    description: "ID постов через запятую",
+    example: DEFAULT_POST_ID,
+  })
   @ApiQuery({ name: "offset", type: Number, required: false, example: 0 })
   @ApiQuery({ name: "page_size", type: Number, required: false, example: 1000 })
-  @ApiQuery({ name: "access_token", type: String, required: true, example: DEFAULT_TOKEN })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
   async fetchLikes(
     @Query("owner_id") owner_id: string,
     @Query("post_ids") post_ids: string,
@@ -56,34 +72,82 @@ export class VkInteractionsController {
         page_size: page_size !== undefined ? Number(page_size) : undefined,
         access_token,
       });
-    } catch (e: any) { this.handleVkError(e); }
+    } catch (e: any) {
+      this.handleVkError(e);
+    }
   }
 
   @Get("likes/get")
   @ApiOperation({ summary: "Получить лайки поста из базы данных" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_id", type: Number, required: true, example: DEFAULT_POST_ID })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_POST_ID,
+  })
   async getLikesFromDb(
     @Query("owner_id") owner_id: string,
     @Query("post_id") post_id: string,
   ) {
     if (!owner_id) throw new BadRequestException("owner_id обязателен");
     if (!post_id) throw new BadRequestException("post_id обязателен");
-    const result = await this.likesUseCase.getFromDb(Number(owner_id), Number(post_id));
-    if (!result) throw new BadRequestException(`Лайки для поста ${post_id} не найдены в базе данных`);
+    const result = await this.likesUseCase.getFromDb(
+      Number(owner_id),
+      Number(post_id),
+    );
+    if (!result)
+      throw new BadRequestException(
+        `Лайки для поста ${post_id} не найдены в базе данных`,
+      );
     return result;
   }
 
   @Get("likes/load")
-  @ApiOperation({ summary: "Загрузить лайки постов из VK API и сохранить в БД" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_ids", type: String, required: true, description: "ID постов через запятую", example: DEFAULT_POST_ID })
-  @ApiQuery({ name: "access_token", type: String, required: true, example: DEFAULT_TOKEN })
+  @ApiOperation({
+    summary: "Загрузить лайки постов из VK API и сохранить в БД",
+  })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_ids",
+    type: String,
+    required: true,
+    description: "ID постов через запятую",
+    example: DEFAULT_POST_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
   @ApiQuery({ name: "offset", type: Number, required: false, example: 0 })
-  @ApiQuery({ name: "count", type: Number, required: false, description: "0 = все", example: 0 })
+  @ApiQuery({
+    name: "count",
+    type: Number,
+    required: false,
+    description: "0 = все",
+    example: 0,
+  })
   @ApiQuery({ name: "page_size", type: Number, required: false, example: 1000 })
   @ApiQuery({ name: "rewrite", type: Boolean, required: false, example: false })
-  @ApiQuery({ name: "mode", type: String, required: false, enum: ["sync", "async", "stream"], example: "sync" })
+  @ApiQuery({
+    name: "mode",
+    type: String,
+    required: false,
+    enum: ["sync", "async", "stream"],
+    example: "sync",
+  })
   async loadLikes(
     @Query("owner_id") owner_id: string,
     @Query("post_ids") post_ids: string,
@@ -111,19 +175,41 @@ export class VkInteractionsController {
       if (resolvedMode === "stream") {
         const obs = this.likesUseCase.loadStream(params);
         return new Observable<MessageEvent>((sub) => {
-          obs.subscribe({ next: (e) => sub.next({ data: e } as MessageEvent), error: (e) => sub.error(e), complete: () => sub.complete() });
+          obs.subscribe({
+            next: (e) => sub.next({ data: e } as MessageEvent),
+            error: (e) => sub.error(e),
+            complete: () => sub.complete(),
+          });
         });
       }
-      if (resolvedMode === "async") return await this.likesUseCase.loadAsync(params);
+      if (resolvedMode === "async")
+        return await this.likesUseCase.loadAsync(params);
       return await this.likesUseCase.loadSync(params);
-    } catch (e: any) { this.handleVkError(e); }
+    } catch (e: any) {
+      this.handleVkError(e);
+    }
   }
 
   @Sse("likes/load/stream")
   @ApiOperation({ summary: "Загрузить лайки постов (SSE-поток)" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_ids", type: String, required: true, example: DEFAULT_POST_ID })
-  @ApiQuery({ name: "access_token", type: String, required: true, example: DEFAULT_TOKEN })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_ids",
+    type: String,
+    required: true,
+    example: DEFAULT_POST_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
   @ApiQuery({ name: "offset", type: Number, required: false, example: 0 })
   @ApiQuery({ name: "count", type: Number, required: false, example: 0 })
   @ApiQuery({ name: "page_size", type: Number, required: false, example: 1000 })
@@ -152,7 +238,12 @@ export class VkInteractionsController {
     return new Observable<MessageEvent>((sub) => {
       obs.subscribe({
         next: (e) => sub.next({ data: e } as MessageEvent),
-        error: (err) => { sub.next({ data: { type: "error", error: err.message } } as MessageEvent); sub.complete(); },
+        error: (err) => {
+          sub.next({
+            data: { type: "error", error: err.message },
+          } as MessageEvent);
+          sub.complete();
+        },
         complete: () => sub.complete(),
       });
     });
@@ -161,13 +252,31 @@ export class VkInteractionsController {
   // ─── COMMENTS ──────────────────────────────────────────────────────────────
 
   @Get("comments/fetch")
-  @ApiOperation({ summary: "Получить комментарии поста из VK API (без сохранения)" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_ids", type: String, required: true, description: "ID постов через запятую", example: DEFAULT_POST_ID })
+  @ApiOperation({
+    summary: "Получить комментарии поста из VK API (без сохранения)",
+  })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_ids",
+    type: String,
+    required: true,
+    description: "ID постов через запятую",
+    example: DEFAULT_POST_ID,
+  })
   @ApiQuery({ name: "offset", type: Number, required: false, example: 0 })
   @ApiQuery({ name: "page_size", type: Number, required: false, example: 100 })
   @ApiQuery({ name: "fields", type: String, required: false, example: "" })
-  @ApiQuery({ name: "access_token", type: String, required: true, example: DEFAULT_TOKEN })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
   async fetchComments(
     @Query("owner_id") owner_id: string,
     @Query("post_ids") post_ids: string,
@@ -188,35 +297,83 @@ export class VkInteractionsController {
         fields: this.parseFields(fields ?? ""),
         access_token,
       });
-    } catch (e: any) { this.handleVkError(e); }
+    } catch (e: any) {
+      this.handleVkError(e);
+    }
   }
 
   @Get("comments/get")
   @ApiOperation({ summary: "Получить комментарии поста из базы данных" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_id", type: Number, required: true, example: DEFAULT_POST_ID })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_POST_ID,
+  })
   async getCommentsFromDb(
     @Query("owner_id") owner_id: string,
     @Query("post_id") post_id: string,
   ) {
     if (!owner_id) throw new BadRequestException("owner_id обязателен");
     if (!post_id) throw new BadRequestException("post_id обязателен");
-    const result = await this.commentsUseCase.getFromDb(Number(owner_id), Number(post_id));
-    if (!result) throw new BadRequestException(`Комментарии для поста ${post_id} не найдены в базе данных`);
+    const result = await this.commentsUseCase.getFromDb(
+      Number(owner_id),
+      Number(post_id),
+    );
+    if (!result)
+      throw new BadRequestException(
+        `Комментарии для поста ${post_id} не найдены в базе данных`,
+      );
     return result;
   }
 
   @Get("comments/load")
-  @ApiOperation({ summary: "Загрузить комментарии постов из VK API и сохранить в БД" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_ids", type: String, required: true, description: "ID постов через запятую", example: DEFAULT_POST_ID })
-  @ApiQuery({ name: "access_token", type: String, required: true, example: DEFAULT_TOKEN })
+  @ApiOperation({
+    summary: "Загрузить комментарии постов из VK API и сохранить в БД",
+  })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_ids",
+    type: String,
+    required: true,
+    description: "ID постов через запятую",
+    example: DEFAULT_POST_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
   @ApiQuery({ name: "offset", type: Number, required: false, example: 0 })
-  @ApiQuery({ name: "count", type: Number, required: false, description: "0 = все", example: 0 })
+  @ApiQuery({
+    name: "count",
+    type: Number,
+    required: false,
+    description: "0 = все",
+    example: 0,
+  })
   @ApiQuery({ name: "page_size", type: Number, required: false, example: 100 })
   @ApiQuery({ name: "fields", type: String, required: false, example: "" })
   @ApiQuery({ name: "rewrite", type: Boolean, required: false, example: false })
-  @ApiQuery({ name: "mode", type: String, required: false, enum: ["sync", "async", "stream"], example: "sync" })
+  @ApiQuery({
+    name: "mode",
+    type: String,
+    required: false,
+    enum: ["sync", "async", "stream"],
+    example: "sync",
+  })
   async loadComments(
     @Query("owner_id") owner_id: string,
     @Query("post_ids") post_ids: string,
@@ -246,19 +403,41 @@ export class VkInteractionsController {
       if (resolvedMode === "stream") {
         const obs = this.commentsUseCase.loadStream(params);
         return new Observable<MessageEvent>((sub) => {
-          obs.subscribe({ next: (e) => sub.next({ data: e } as MessageEvent), error: (e) => sub.error(e), complete: () => sub.complete() });
+          obs.subscribe({
+            next: (e) => sub.next({ data: e } as MessageEvent),
+            error: (e) => sub.error(e),
+            complete: () => sub.complete(),
+          });
         });
       }
-      if (resolvedMode === "async") return await this.commentsUseCase.loadAsync(params);
+      if (resolvedMode === "async")
+        return await this.commentsUseCase.loadAsync(params);
       return await this.commentsUseCase.loadSync(params);
-    } catch (e: any) { this.handleVkError(e); }
+    } catch (e: any) {
+      this.handleVkError(e);
+    }
   }
 
   @Sse("comments/load/stream")
   @ApiOperation({ summary: "Загрузить комментарии постов (SSE-поток)" })
-  @ApiQuery({ name: "owner_id", type: Number, required: true, example: DEFAULT_OWNER_ID })
-  @ApiQuery({ name: "post_ids", type: String, required: true, example: DEFAULT_POST_ID })
-  @ApiQuery({ name: "access_token", type: String, required: true, example: DEFAULT_TOKEN })
+  @ApiQuery({
+    name: "owner_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_OWNER_ID,
+  })
+  @ApiQuery({
+    name: "post_ids",
+    type: String,
+    required: true,
+    example: DEFAULT_POST_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
   @ApiQuery({ name: "offset", type: Number, required: false, example: 0 })
   @ApiQuery({ name: "count", type: Number, required: false, example: 0 })
   @ApiQuery({ name: "page_size", type: Number, required: false, example: 100 })
@@ -290,7 +469,12 @@ export class VkInteractionsController {
     return new Observable<MessageEvent>((sub) => {
       obs.subscribe({
         next: (e) => sub.next({ data: e } as MessageEvent),
-        error: (err) => { sub.next({ data: { type: "error", error: err.message } } as MessageEvent); sub.complete(); },
+        error: (err) => {
+          sub.next({
+            data: { type: "error", error: err.message },
+          } as MessageEvent);
+          sub.complete();
+        },
         complete: () => sub.complete(),
       });
     });
@@ -299,12 +483,18 @@ export class VkInteractionsController {
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
   private parseIds(raw: string): number[] {
-    return raw.split(",").map((s) => Number(s.trim())).filter((n) => !isNaN(n) && n > 0);
+    return raw
+      .split(",")
+      .map((s) => Number(s.trim()))
+      .filter((n) => !isNaN(n) && n > 0);
   }
 
   private parseFields(raw: string): string[] | undefined {
     if (!raw?.trim()) return undefined;
-    return raw.split(",").map((f) => f.trim()).filter((f) => f.length > 0);
+    return raw
+      .split(",")
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0);
   }
 
   private handleVkError(e: any): never {

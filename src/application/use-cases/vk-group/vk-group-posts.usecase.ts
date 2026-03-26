@@ -82,11 +82,7 @@ export class VkGroupPostsUseCase {
   /**
    * Получить посты группы из базы данных через IPostRepository.
    */
-  async getFromDb(
-    groupId: number,
-    offset = 0,
-    count = 100,
-  ): Promise<VkPost[]> {
+  async getFromDb(groupId: number, offset = 0, count = 100): Promise<VkPost[]> {
     const ownerId = -Math.abs(groupId);
     return this.postRepository.findByOwner(ownerId, { offset, count });
   }
@@ -119,7 +115,9 @@ export class VkGroupPostsUseCase {
     const subject = new Subject<GroupPostsEvent>();
 
     this.executeStream(params, subject).catch((err) => {
-      this.logger.error(`[GroupPosts] Ошибка потоковой загрузки: ${err.message}`);
+      this.logger.error(
+        `[GroupPosts] Ошибка потоковой загрузки: ${err.message}`,
+      );
       subject.error(err);
     });
 
@@ -245,7 +243,11 @@ export class VkGroupPostsUseCase {
       }
     }
 
-    return { total_fetched: totalFetched, total_saved: totalSaved, pages: page };
+    return {
+      total_fetched: totalFetched,
+      total_saved: totalSaved,
+      pages: page,
+    };
   }
 
   /**

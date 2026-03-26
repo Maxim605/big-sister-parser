@@ -42,8 +42,13 @@ export class VkGroupMembersUseCase {
     private readonly subscriptionRepo: ISubscriptionRepository,
   ) {}
 
-  async fetch(params: LoadGroupMembersParams): Promise<{ count: number; items: any[] }> {
-    const pageSize = Math.min(params.page_size ?? this.MAX_PAGE_SIZE, this.MAX_PAGE_SIZE);
+  async fetch(
+    params: LoadGroupMembersParams,
+  ): Promise<{ count: number; items: any[] }> {
+    const pageSize = Math.min(
+      params.page_size ?? this.MAX_PAGE_SIZE,
+      this.MAX_PAGE_SIZE,
+    );
     return this.api.groupsGetMembers({
       group_id: params.group_id,
       offset: params.offset ?? 0,
@@ -77,7 +82,9 @@ export class VkGroupMembersUseCase {
   loadStream(params: LoadGroupMembersParams): Observable<GroupMembersEvent> {
     const subject = new Subject<GroupMembersEvent>();
     this.executeStream(params, subject).catch((err) => {
-      this.logger.error(`[GroupMembers] Ошибка потоковой загрузки: ${err.message}`);
+      this.logger.error(
+        `[GroupMembers] Ошибка потоковой загрузки: ${err.message}`,
+      );
       subject.error(err);
     });
     return new Observable((subscriber) => subject.subscribe(subscriber));
@@ -89,7 +96,10 @@ export class VkGroupMembersUseCase {
     parallel: boolean,
   ): Promise<LoadGroupMembersResult> {
     const groupId = Number(params.group_id);
-    const pageSize = Math.min(params.page_size ?? this.MAX_PAGE_SIZE, this.MAX_PAGE_SIZE);
+    const pageSize = Math.min(
+      params.page_size ?? this.MAX_PAGE_SIZE,
+      this.MAX_PAGE_SIZE,
+    );
     const startOffset = params.offset ?? 0;
     const maxCount = params.count ?? 0;
 
@@ -121,10 +131,20 @@ export class VkGroupMembersUseCase {
     totalFetched += firstPage.items.length;
     totalSaved += firstIds.length;
     page++;
-    onProgress?.({ type: "page", page, saved: firstIds.length, total: totalCount, total_saved: totalSaved });
+    onProgress?.({
+      type: "page",
+      page,
+      saved: firstIds.length,
+      total: totalCount,
+      total_saved: totalSaved,
+    });
 
     const offsets: number[] = [];
-    for (let off = startOffset + pageSize; off < startOffset + limit; off += pageSize) {
+    for (
+      let off = startOffset + pageSize;
+      off < startOffset + limit;
+      off += pageSize
+    ) {
       offsets.push(off);
     }
 
@@ -148,7 +168,13 @@ export class VkGroupMembersUseCase {
           totalFetched += pageData.items.length;
           totalSaved += ids.length;
           page++;
-          onProgress?.({ type: "page", page, saved: ids.length, total: totalCount, total_saved: totalSaved });
+          onProgress?.({
+            type: "page",
+            page,
+            saved: ids.length,
+            total: totalCount,
+            total_saved: totalSaved,
+          });
         }
       }
     } else {
@@ -165,16 +191,29 @@ export class VkGroupMembersUseCase {
         totalFetched += pageData.items.length;
         totalSaved += ids.length;
         page++;
-        onProgress?.({ type: "page", page, saved: ids.length, total: totalCount, total_saved: totalSaved });
+        onProgress?.({
+          type: "page",
+          page,
+          saved: ids.length,
+          total: totalCount,
+          total_saved: totalSaved,
+        });
         if (pageData.items.length === 0) break;
       }
     }
 
-    return { total_count: totalCount, total_fetched: totalFetched, total_saved: totalSaved, pages: page };
+    return {
+      total_count: totalCount,
+      total_fetched: totalFetched,
+      total_saved: totalSaved,
+      pages: page,
+    };
   }
 
   private extractIds(items: Array<number | Record<string, any>>): number[] {
-    return items.map((item) => (typeof item === "number" ? item : (item as any).id));
+    return items.map((item) =>
+      typeof item === "number" ? item : (item as any).id,
+    );
   }
 
   private async executeStream(
@@ -183,8 +222,14 @@ export class VkGroupMembersUseCase {
   ): Promise<void> {
     subject.next({ type: "started" });
     try {
-      const result = await this.loadSync(params, (event) => subject.next(event));
-      subject.next({ type: "completed", total: result.total_count, total_saved: result.total_saved });
+      const result = await this.loadSync(params, (event) =>
+        subject.next(event),
+      );
+      subject.next({
+        type: "completed",
+        total: result.total_count,
+        total_saved: result.total_saved,
+      });
     } catch (err: any) {
       subject.next({ type: "error", error: err.message || String(err) });
     } finally {

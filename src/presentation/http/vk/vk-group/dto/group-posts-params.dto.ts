@@ -73,7 +73,8 @@ export class GroupPostsParamsDto {
   rewrite?: boolean;
 
   @ApiPropertyOptional({
-    description: "Режим выполнения: sync (последовательный), async (параллельный), stream (потоковый SSE)",
+    description:
+      "Режим выполнения: sync (последовательный), async (параллельный), stream (потоковый SSE)",
     enum: ["sync", "async", "stream"],
     default: "sync",
     example: "sync",

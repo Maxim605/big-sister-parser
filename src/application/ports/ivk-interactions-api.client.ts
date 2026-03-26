@@ -7,5 +7,7 @@ import {
 
 export interface IVkInteractionsApiClient {
   likesGetList(params: VkLikesGetListParams): Promise<VkLikesGetListResponse>;
-  wallGetComments(params: VkWallGetCommentsParams): Promise<VkWallGetCommentsResponse>;
+  wallGetComments(
+    params: VkWallGetCommentsParams,
+  ): Promise<VkWallGetCommentsResponse>;
 }

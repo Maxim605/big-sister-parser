@@ -133,7 +133,9 @@ export class VkGroupInfoUseCase {
 
     // Запускаем загрузку асинхронно, не блокируя
     this.executeStream(params, subject).catch((err) => {
-      this.logger.error(`[GroupInfo] Ошибка потоковой загрузки: ${err.message}`);
+      this.logger.error(
+        `[GroupInfo] Ошибка потоковой загрузки: ${err.message}`,
+      );
       subject.error(err);
     });
 

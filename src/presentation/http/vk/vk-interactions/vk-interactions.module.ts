@@ -10,7 +10,10 @@ import { VkCommentsUseCase } from "src/application/use-cases/vk-interactions/vk-
   imports: [HttpModule],
   providers: [
     VkInteractionsApiClient,
-    { provide: TOKENS.IVkInteractionsApiClient, useExisting: VkInteractionsApiClient },
+    {
+      provide: TOKENS.IVkInteractionsApiClient,
+      useExisting: VkInteractionsApiClient,
+    },
     VkLikesUseCase,
     VkCommentsUseCase,
   ],
@@ -19,5 +22,7 @@ import { VkCommentsUseCase } from "src/application/use-cases/vk-interactions/vk-
 })
 export class VkInteractionsModule implements OnModuleInit {
   private readonly logger = new Logger(VkInteractionsModule.name);
-  onModuleInit() { this.logger.log("VkInteractionsModule initialized"); }
+  onModuleInit() {
+    this.logger.log("VkInteractionsModule initialized");
+  }
 }
