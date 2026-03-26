@@ -1,4 +1,10 @@
-import { IsString, IsUrl } from "class-validator";
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from "class-validator";
 
 export class VkApi {
   @IsUrl({ require_tld: false })
@@ -6,4 +12,23 @@ export class VkApi {
 
   @IsString()
   public version: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  public defaultStartId: number;
+
+  /** ID группы по умолчанию (используется как дефолтный параметр в Swagger) */
+  @IsNumber()
+  @IsOptional()
+  public defaultGroupId?: number;
+
+  /** ID поста по умолчанию (используется как дефолтный параметр в Swagger) */
+  @IsNumber()
+  @IsOptional()
+  public defaultPostId?: number;
+
+  /** ID пользователя по умолчанию (используется как дефолтный параметр в Swagger) */
+  @IsNumber()
+  @IsOptional()
+  public defaultUserId?: number;
 }

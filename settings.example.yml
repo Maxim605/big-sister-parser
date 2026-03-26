@@ -1,0 +1,35 @@
+# пример конфига
+debug: true
+envSecret: "dev-insecure-secret-key-32bytes!"
+
+enableThrift: false
+basePath: "big-sister-parser"
+host: "http://localhost:3002/"
+
+db:
+  debug: true
+  host: "host"
+  port: 5432
+  username: "admin"
+  password: "admin"
+  database: "big-sister-parser"
+
+arango: {
+  url: 'http://localhost:8529',  
+  database: '_system',
+  username: 'root',
+  password: 'test',
+}
+
+redis: {
+  url: "redis://127.0.0.1:6379"
+}
+
+vkApi:
+  baseUrl: "https://api.vk.com/method"
+  version: "5.131"
+  defaultStartId: 508133099
+  defaultGroupId: 31480508
+
+token: 
+  vkDefault: "vk1.a.abcdef123456..."

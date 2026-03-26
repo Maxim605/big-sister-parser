@@ -3,10 +3,10 @@ import { Database } from "arangojs";
 import { ArangoModule } from "../arango/arango.module";
 import { ThriftArangoService } from "./services";
 import { ThriftController } from "./thrift.controller";
+import settings from "../settings";
 
 const thrift = require("thrift");
 const path = require("path");
-const arangoService = require("./gen-nodejs/ArangoService"); // TODO: fix path
 
 @Global()
 @Module({
@@ -16,12 +16,34 @@ const arangoService = require("./gen-nodejs/ArangoService"); // TODO: fix path
     {
       provide: "THRIFT_SERVER",
       useFactory: async (db: Database) => {
+        let arangoService: any;
+        try {
+          arangoService = require(path.join(
+            __dirname,
+            "gen-nodejs",
+            "ArangoService",
+          ));
+        } catch (e) {
+          throw new Error(
+            "Thrift generated service not found. Run 'npm run gen-thrift' or disable Thrift via settings.enableThrift=false.",
+          );
+        }
         const handler = {
           async save(req) {
             try {
-              const col = db.collection(req.collection);
+              const collectionName = req.collection;
               const doc = req.fields;
-              const res = await col.save(doc);
+              let col = db.collection(collectionName);
+              const exists = await col.exists();
+              if (!exists) {
+                if (doc._from && doc._to) {
+                  await db.createEdgeCollection(collectionName);
+                } else {
+                  await db.createCollection(collectionName);
+                }
+                col = db.collection(collectionName);
+              }
+              const res = await col.save(doc, { overwriteMode: "update" });
               return { success: true, key: res._key };
             } catch (e) {
               return { success: false, error: e.message };
@@ -38,7 +60,8 @@ const arangoService = require("./gen-nodejs/ArangoService"); // TODO: fix path
           },
         };
         const server = thrift.createServer(arangoService, handler);
-        server.listen(9090);
+        const port = settings.thriftListenPort ?? 9090;
+        server.listen(port);
         return server;
       },
       inject: ["ARANGODB_CLIENT"],
@@ -49,6 +72,8 @@ const arangoService = require("./gen-nodejs/ArangoService"); // TODO: fix path
 })
 export class ThriftModule implements OnModuleInit {
   onModuleInit() {
-    console.log("Thrift server started on port 9090");
+    console.log(
+      `Thrift server started on port ${settings.thriftListenPort ?? 9090}`,
+    );
   }
 }

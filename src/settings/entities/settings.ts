@@ -2,6 +2,7 @@ import { Type } from "class-transformer";
 import {
   IsBoolean,
   IsDefined,
+  IsNumber,
   IsOptional,
   IsString,
   ValidateNested,
@@ -10,6 +11,10 @@ import {
 import { Db } from "./db";
 import { VkApi } from "./vk-api";
 import { Arango } from "./arango";
+import { Redis } from "./redis";
+import { VkWallSettings } from "./vk-wall";
+import { Token } from "./token";
+import { OrchestratorSettings } from "./orchestrator";
 
 /**
  * Глобальные настройки приложения.
@@ -20,6 +25,10 @@ export class Settings {
   @IsDefined()
   @IsBoolean()
   public debug = false;
+
+  @IsDefined()
+  @IsString()
+  public envSecret: string;
 
   @IsDefined()
   @IsString()
@@ -42,9 +51,45 @@ export class Settings {
 
   @IsDefined()
   @ValidateNested()
+  @Type(() => Redis)
+  public redis: Redis;
+
+  @IsDefined()
+  @ValidateNested()
   @Type(() => VkApi)
   public vkApi: VkApi;
 
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => Token)
+  public token: Token;
+
+  // Конфигурация модуля парсинга стены VK
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => VkWallSettings)
+  public vkWall: VkWallSettings = new VkWallSettings();
+
+  // Конфигурация модуля оркестратора
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => OrchestratorSettings)
+  public orchestrator: OrchestratorSettings = new OrchestratorSettings();
+
+  @IsOptional()
+  @IsBoolean()
+  public enableThrift = false;
+
+  /** TCP-порт встроенного Thrift-сервера Arango (клиент и server.listen). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  public thriftListenPort?: number;
+
   @IsOptional()
   public credentials?: any;
+
+  @IsOptional()
+  @IsString()
+  public apiVersion?: string;
 }
