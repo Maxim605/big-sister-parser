@@ -146,3 +146,35 @@ export interface VkGroupsMembersResponse {
   count: number;
   items: Array<number | Record<string, any>>;
 }
+
+// ─── VK Interactions (Лайки и комментарии) ───────────────────────────────────
+
+export interface VkLikesGetListParams {
+  type: "post" | "comment" | "photo" | "video";
+  owner_id: number;
+  item_id: number;
+  offset?: number;
+  count?: number;
+  access_token: string;
+}
+
+export interface VkLikesGetListResponse {
+  count: number;
+  items: number[];
+}
+
+export interface VkWallGetCommentsParams {
+  owner_id: number;
+  post_id: number;
+  offset?: number;
+  count?: number;
+  fields?: string[];
+  access_token: string;
+}
+
+export interface VkWallGetCommentsResponse {
+  count: number;
+  items: Array<Record<string, any>>;
+  profiles?: Array<Record<string, any>>;
+  groups?: Array<Record<string, any>>;
+}
