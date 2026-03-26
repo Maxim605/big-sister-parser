@@ -26,4 +26,9 @@ export class VkApi {
   @IsNumber()
   @IsOptional()
   public defaultPostId?: number;
+
+  /** ID пользователя по умолчанию (используется как дефолтный параметр в Swagger) */
+  @IsNumber()
+  @IsOptional()
+  public defaultUserId?: number;
 }

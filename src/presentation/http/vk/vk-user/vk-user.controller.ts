@@ -30,6 +30,11 @@ import { VkUserSubscriptionsJobService } from "src/infrastructure/jobs/vk-user-s
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { VkUserSubscriptionsQueueEventsService } from "src/infrastructure/queue/vk-user-subscriptions-queue-events.service";
+import { VkApiService } from "src/infrastructure/vk/vk-api.service";
+import settings from "src/settings";
+
+const DEFAULT_USER_ID = settings.vkApi.defaultUserId ?? 310305122;
+const DEFAULT_TOKEN = settings.token.vkDefault ?? "";
 
 @ApiTags(`${VK_TAG}-${USER_TAG}`)
 @Controller(`${API_V1}/${VK_TAG}`)
@@ -42,6 +47,7 @@ export class VkUserController {
     private readonly loadSubscriptionsUseCase: LoadVkUserSubscriptionsService,
     private readonly subsJobs: VkUserSubscriptionsJobService,
     private readonly subsQueueSvc: VkUserSubscriptionsQueueEventsService,
+    private readonly vkApi: VkApiService,
   ) {}
 
   @Get(`${USER_TAG}/fetch`)
@@ -204,5 +210,175 @@ export class VkUserController {
         return () => sub.unsubscribe();
       })().catch((e) => subscriber.error(e));
     });
+  }
+
+  // ─── POSTS ─────────────────────────────────────────────────────────────────
+
+  @Get(`${USER_TAG}/posts/latest`)
+  @ApiOperation({
+    summary: "Получить последние N постов пользователя",
+    description:
+      "Возвращает id, date и text последних постов со стены пользователя (wall.get).",
+  })
+  @ApiQuery({
+    name: "user_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_USER_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
+  @ApiQuery({
+    name: "count",
+    type: Number,
+    required: false,
+    description: "Количество постов (по умолчанию 5)",
+    example: 5,
+  })
+  @ApiQuery({
+    name: "offset",
+    type: Number,
+    required: false,
+    description: "Смещение",
+    example: 0,
+  })
+  async getLatestPosts(
+    @Query("user_id") user_id: string,
+    @Query("access_token") access_token: string,
+    @Query("count") count?: string,
+    @Query("offset") offset?: string,
+  ) {
+    if (!user_id) throw new BadRequestException("user_id is required");
+    if (!access_token)
+      throw new BadRequestException("access_token is required");
+
+    const res = await this.vkApi.wallGet({
+      owner_id: Number(user_id),
+      count: count !== undefined ? Number(count) : 5,
+      offset: offset !== undefined ? Number(offset) : 0,
+      access_token,
+    });
+
+    return {
+      count: res.count,
+      items: res.items.map((p: any) => ({
+        id: p.id,
+        date: p.date,
+        text: p.text,
+      })),
+    };
+  }
+
+  @Get(`${USER_TAG}/posts/by-period`)
+  @ApiOperation({
+    summary: "Получить посты пользователя за период",
+    description:
+      "Возвращает id постов за указанный период (по умолчанию последний месяц). " +
+      "Перебирает страницы wall.get пока дата поста не выйдет за пределы периода.",
+  })
+  @ApiQuery({
+    name: "user_id",
+    type: Number,
+    required: true,
+    example: DEFAULT_USER_ID,
+  })
+  @ApiQuery({
+    name: "access_token",
+    type: String,
+    required: true,
+    example: DEFAULT_TOKEN,
+  })
+  @ApiQuery({
+    name: "date_from",
+    type: Number,
+    required: false,
+    description: "Начало периода (unix timestamp). По умолчанию — месяц назад.",
+    example: Math.floor(Date.now() / 1000) - 30 * 24 * 3600,
+  })
+  @ApiQuery({
+    name: "date_to",
+    type: Number,
+    required: false,
+    description: "Конец периода (unix timestamp). По умолчанию — сейчас.",
+    example: Math.floor(Date.now() / 1000),
+  })
+  @ApiQuery({
+    name: "count",
+    type: Number,
+    required: false,
+    description: "Макс. количество постов (0 = все за период)",
+    example: 0,
+  })
+  @ApiQuery({
+    name: "page_size",
+    type: Number,
+    required: false,
+    description: "Размер страницы (макс. 100)",
+    example: 100,
+  })
+  async getPostsByPeriod(
+    @Query("user_id") user_id: string,
+    @Query("access_token") access_token: string,
+    @Query("date_from") date_from?: string,
+    @Query("date_to") date_to?: string,
+    @Query("count") count?: string,
+    @Query("page_size") page_size?: string,
+  ) {
+    if (!user_id) throw new BadRequestException("user_id is required");
+    if (!access_token)
+      throw new BadRequestException("access_token is required");
+
+    const now = Math.floor(Date.now() / 1000);
+    const from =
+      date_from !== undefined ? Number(date_from) : now - 30 * 24 * 3600;
+    const to = date_to !== undefined ? Number(date_to) : now;
+    const maxCount = count !== undefined ? Number(count) : 0;
+    const pageSize = Math.min(
+      page_size !== undefined ? Number(page_size) : 100,
+      100,
+    );
+
+    const result: { id: number; date: number; text: string }[] = [];
+    let offset = 0;
+
+    while (true) {
+      const res = await this.vkApi.wallGet({
+        owner_id: Number(user_id),
+        count: pageSize,
+        offset,
+        access_token,
+      });
+
+      if (!res.items || res.items.length === 0) break;
+
+      let reachedBefore = false;
+      for (const post of res.items) {
+        if (post.date < from) {
+          reachedBefore = true;
+          break;
+        }
+        if (post.date <= to) {
+          result.push({ id: post.id, date: post.date, text: post.text });
+          if (maxCount > 0 && result.length >= maxCount) {
+            reachedBefore = true;
+            break;
+          }
+        }
+      }
+
+      if (reachedBefore || offset + pageSize >= res.count) break;
+      offset += pageSize;
+    }
+
+    return {
+      count: result.length,
+      date_from: from,
+      date_to: to,
+      items: result,
+    };
   }
 }

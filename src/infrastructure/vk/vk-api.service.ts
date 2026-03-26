@@ -172,4 +172,26 @@ export class VkApiService implements IVkApiClient {
     }
     return raw as VkUsersGetSubscriptionsResponse;
   }
+
+  public async wallGet(params: {
+    owner_id: number;
+    offset?: number;
+    count?: number;
+    access_token: string;
+  }): Promise<{ count: number; items: any[] }> {
+    const { access_token, ...rest } = params;
+    const urlBuilder = (t: string) => {
+      const query = new URLSearchParams();
+      query.set("access_token", t);
+      query.set("v", settings.vkApi.version);
+      query.set("owner_id", String(rest.owner_id));
+      if (rest.offset !== undefined) query.set("offset", String(rest.offset));
+      if (rest.count !== undefined) query.set("count", String(rest.count));
+      return `${this.baseUrl}/wall.get?${query.toString()}`;
+    };
+    return (await this.getWithLeasing<{ count: number; items: any[] }>(
+      urlBuilder,
+      access_token,
+    )) as { count: number; items: any[] };
+  }
 }
